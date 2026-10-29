@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "322078587706",
+    "project_id": "demo-kawansekolah",
+    "storage_bucket": "demo-kawansekolah.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:322078587706:android:db6d9e889ee3e75c5f6e03",
+        "android_client_info": {
+          "package_name": "com.example.kawansekolah"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARo7QjF5k-Wn6SO57V0emT9TXJIGM45wU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

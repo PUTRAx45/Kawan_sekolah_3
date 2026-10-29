@@ -1,0 +1,8 @@
+======================================================
+🚀 Backend AI Analytics KawanSekolah berjalan di port 3000
+
+⚠️  PERINGATAN KONFIGURASI AI:
+   OPENROUTER_API_KEY belum dikonfigurasi atau masih berisi nilai placeholder!
+   Silakan isi OPENROUTER_API_KEY di file 'backend/.env' Anda agar fitur AI Analytics berfungsi.
+
+======================================================

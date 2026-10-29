@@ -1,0 +1,31 @@
+services:
+  firebase-emulator:
+    build: .
+    ports:
+      - "4000:4000"
+      - "8080:8080"
+      - "9099:9099"
+    volumes:
+      - firebase_data:/emulator-data
+    command: >
+      sh -c "if [ -f /emulator-data/firebase-export-metadata.json ]; then
+               firebase emulators:start --project=demo-kawansekolah --import=/emulator-data --export-on-exit=/emulator-data;
+             else
+               firebase emulators:start --project=demo-kawansekolah --export-on-exit=/emulator-data;
+             fi"
+    stop_grace_period: 30s
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: kawansekolah
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+  firebase_data:

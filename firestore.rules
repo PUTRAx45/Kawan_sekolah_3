@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Fungsi Pembantu
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isTeacher() {
+      return isSignedIn() && getUserData().role == 'TEACHER';
+    }
+
+    function isStudent() {
+      return isSignedIn() && getUserData().role == 'STUDENT';
+    }
+
+    function isParent() {
+      return isSignedIn() && getUserData().role == 'PARENT';
+    }
+
+    // Collection: users
+    match /users/{userId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (isTeacher() && resource.data.teacherId == request.auth.uid) ||
+        (isParent() && userId in getUserData().studentIds)
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.role == 'TEACHER' ||
+        (isTeacher() && request.resource.data.teacherId == request.auth.uid)
+      );
+      allow update, delete: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (isTeacher() && resource.data.teacherId == request.auth.uid)
+      );
+    }
+
+    // Collection: teaching_profiles
+    match /teaching_profiles/{teacherId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isTeacher() && request.auth.uid == teacherId;
+    }
+
+    // Collection: subjects
+    match /subjects/{subjectId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isTeacher();
+    }
+
+    // Collection: topics
+    match /topics/{topicId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isTeacher();
+    }
+
+    // Collection: grades
+    match /grades/{gradeId} {
+      allow read: if isSignedIn() && (
+        isTeacher() ||
+        (isStudent() && resource.data.studentId == request.auth.uid) ||
+        (isParent() && resource.data.studentId in getUserData().studentIds)
+      );
+      allow write: if isSignedIn() && isTeacher();
+    }
+
+    // Collection: insights
+    match /insights/{insightId} {
+      allow read: if isSignedIn() && (
+        isTeacher() ||
+        (isStudent() && resource.data.studentId == request.auth.uid) ||
+        (isParent() && resource.data.studentId in getUserData().studentIds)
+      );
+      allow write: if isSignedIn() && isTeacher();
+    }
+  }
+}
