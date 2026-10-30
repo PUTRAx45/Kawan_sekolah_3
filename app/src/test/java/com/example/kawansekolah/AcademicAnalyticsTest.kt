@@ -15,7 +15,8 @@ class AcademicAnalyticsTest {
     @Test
     fun testUserRoleLabels() {
         assertEquals("Siswa", UserRole.SISWA.label)
-        assertEquals("Guru", UserRole.GURU.label)
+        assertEquals("Guru Mapel", UserRole.GURU.label)
+        assertEquals("Wali Kelas", UserRole.WALI_KELAS.label)
         assertEquals("Orang Tua", UserRole.ORANG_TUA.label)
     }
 

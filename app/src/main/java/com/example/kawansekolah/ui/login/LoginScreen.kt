@@ -249,8 +249,9 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val roles = listOf(
-                        Triple(UserRole.SISWA, "Siswa (NISN)", Icons.Default.School),
-                        Triple(UserRole.GURU, "Guru", Icons.Default.Psychology),
+                        Triple(UserRole.SISWA, "Siswa", Icons.Default.School),
+                        Triple(UserRole.GURU, "Guru Mapel", Icons.Default.Psychology),
+                        Triple(UserRole.WALI_KELAS, "Wali Kelas", Icons.Default.Class),
                         Triple(UserRole.ORANG_TUA, "Orang Tua", Icons.Default.People)
                     )
 
@@ -262,6 +263,7 @@ fun LoginScreen(
                                 identifierInput = when (role) {
                                     UserRole.SISWA -> "12345"
                                     UserRole.GURU -> "guru@kawansekolah.sch.id"
+                                    UserRole.WALI_KELAS -> "guru.wali@kawansekolah.sch.id"
                                     UserRole.ORANG_TUA -> "ortu.ahmad@kawansekolah.local"
                                 }
                                 passwordInput = "123456"
@@ -298,7 +300,8 @@ fun LoginScreen(
 
                 val fieldLabel = when (selectedRole) {
                     UserRole.SISWA -> "Nomor NISN Siswa"
-                    UserRole.GURU -> "Email Guru"
+                    UserRole.GURU -> "Email Guru Mapel"
+                    UserRole.WALI_KELAS -> "Email Wali Kelas"
                     UserRole.ORANG_TUA -> "Email Orang Tua"
                 }
 

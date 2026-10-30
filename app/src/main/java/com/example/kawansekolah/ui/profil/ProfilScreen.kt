@@ -54,8 +54,9 @@ fun ProfilScreen(
     }
 
     val roleSubtitle = when (userRole) {
-        UserRole.SISWA -> "Kelas X IPA 2 • NISN: $idNumber"
+        UserRole.SISWA -> "Kelas 9-A • NISN: $idNumber"
         UserRole.GURU -> "Pengajar Utama • NIP: 198805$idNumber"
+        UserRole.WALI_KELAS -> "Wali Kelas 9-A • NIP: 198504$idNumber"
         UserRole.ORANG_TUA -> "Wali Murid • ID: ORTU-$idNumber"
     }
 
@@ -64,6 +65,7 @@ fun ProfilScreen(
         val domain = when (userRole) {
             UserRole.SISWA -> "siswa.kawansekolah.sch.id"
             UserRole.GURU -> "guru.kawansekolah.sch.id"
+            UserRole.WALI_KELAS -> "wali.kawansekolah.sch.id"
             UserRole.ORANG_TUA -> "ortu.kawansekolah.sch.id"
         }
         "$cleanName@$domain"
@@ -99,6 +101,7 @@ fun ProfilScreen(
                     imageVector = when (userRole) {
                         UserRole.SISWA -> Icons.Default.School
                         UserRole.GURU -> Icons.Default.Psychology
+                        UserRole.WALI_KELAS -> Icons.Default.Class
                         UserRole.ORANG_TUA -> Icons.Default.People
                     },
                     contentDescription = "Profile Avatar",

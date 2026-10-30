@@ -34,8 +34,15 @@ fun BottomNavigationBar(
         )
         UserRole.GURU -> listOf(
             Triple("Input Nilai", Icons.Default.Edit, "guru_input"),
-            Triple("Pelajaran", Icons.Default.MenuBook, "pelajaran"),
-            Triple("AI", Icons.Default.AutoAwesome, "ai"),
+            Triple("Unggah CSV", Icons.Default.UploadFile, "unggah_csv"),
+            Triple("Statistik", Icons.Default.BarChart, "statistik"),
+            Triple("Insight AI", Icons.Default.AutoAwesome, "insight_page"),
+            Triple("Profil", Icons.Default.Person, "profil")
+        )
+        UserRole.WALI_KELAS -> listOf(
+            Triple("Rekap Kelas", Icons.Default.Class, "rekap_wali"),
+            Triple("Statistik", Icons.Default.BarChart, "statistik"),
+            Triple("Insight AI", Icons.Default.AutoAwesome, "insight_page"),
             Triple("Profil", Icons.Default.Person, "profil")
         )
         UserRole.ORANG_TUA -> listOf(
@@ -87,7 +94,7 @@ fun BottomNavigationBar(
                     label = {
                         Text(
                             text = title,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             maxLines = 1
                         )

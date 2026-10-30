@@ -18,7 +18,12 @@ import kotlinx.coroutines.delay
 import com.example.kawansekolah.ui.ai.AiScreen
 import com.example.kawansekolah.ui.beranda.BerandaScreen
 import com.example.kawansekolah.ui.components.BottomNavigationBar
+import com.example.kawansekolah.ui.feature_insight.InsightScreen
+import com.example.kawansekolah.ui.feature_nilai.InputNilaiScreen
+import com.example.kawansekolah.ui.feature_nilai.UnggahCsvScreen
 import com.example.kawansekolah.ui.feature_notifikasi.NotificationBottomSheet
+import com.example.kawansekolah.ui.feature_statistik.StatistikScreen
+import com.example.kawansekolah.ui.feature_wali.RekapNilaiScreen
 import com.example.kawansekolah.ui.nilai.NilaiScreen
 import com.example.kawansekolah.ui.pelajaran.PelajaranScreen
 import com.example.kawansekolah.ui.pelajaran.components.SubjectDetailBottomSheet
@@ -105,9 +110,6 @@ fun MainScreen(
         )
     }
 
-    // Filter active notifications:
-    // 1. Auto-expire Login notification after 1 hour (3,600,000 ms)
-    // 2. Hide Task notification when associated task is marked as completed
     val completedTaskIds = remember(tasks) { tasks.filter { it.isChecked }.map { it.id }.toSet() }
 
     val activeNotifications = remember(notifications, nowMillis, completedTaskIds) {
@@ -182,8 +184,16 @@ fun MainScreen(
 
     val startDest = when (userRole) {
         UserRole.GURU -> "guru_input"
+        UserRole.WALI_KELAS -> "rekap_wali"
         UserRole.ORANG_TUA -> "nilai"
         UserRole.SISWA -> "beranda"
+    }
+
+    val roleString = when (userRole) {
+        UserRole.GURU -> "GURU_MAPEL"
+        UserRole.WALI_KELAS -> "WALI_KELAS"
+        UserRole.SISWA -> "SISWA"
+        UserRole.ORANG_TUA -> "ORANG_TUA"
     }
 
     Scaffold(
@@ -201,6 +211,40 @@ fun MainScreen(
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
         ) {
             composable("guru_input") {
+                InputNilaiScreen(
+                    userRole = roleString,
+                    userId = "guru_smp_01",
+                    onNavigateToCsvUpload = { navController.navigate("unggah_csv") },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("unggah_csv") {
+                UnggahCsvScreen(
+                    userRole = roleString,
+                    userId = "guru_smp_01",
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("rekap_wali") {
+                RekapNilaiScreen(
+                    userRole = roleString,
+                    userId = "guru_wali_01",
+                    onNavigateToStatistik = { navController.navigate("statistik") }
+                )
+            }
+            composable("statistik") {
+                StatistikScreen(
+                    userRole = roleString,
+                    userId = if (userRole == UserRole.WALI_KELAS) "guru_wali_01" else "guru_smp_01"
+                )
+            }
+            composable("insight_page") {
+                InsightScreen(
+                    userRole = roleString,
+                    userId = "guru_smp_01"
+                )
+            }
+            composable("guru_dashboard") {
                 GuruScreen(
                     userName = userName,
                     grades = grades,
@@ -247,14 +291,6 @@ fun MainScreen(
                 NilaiScreen(
                     userName = userName,
                     userRole = userRole,
-                    grades = grades,
-                    unreadCount = unreadCount,
-                    onNotificationClick = handleNotificationClick
-                )
-            }
-            composable("tugas") {
-                NilaiScreen(
-                    userName = userName,
                     grades = grades,
                     unreadCount = unreadCount,
                     onNotificationClick = handleNotificationClick

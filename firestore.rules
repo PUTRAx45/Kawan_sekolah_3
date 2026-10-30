@@ -12,15 +12,37 @@ service cloud.firestore {
     }
 
     function isTeacher() {
-      return isSignedIn() && getUserData().role == 'TEACHER';
+      return isSignedIn() && (getUserData().role == 'TEACHER' || getUserData().role == 'GURU' || getUserData().role == 'GURU_MAPEL');
+    }
+
+    function isHomeroomTeacher() {
+      return isSignedIn() && (getUserData().role == 'WALI_KELAS' || getUserData().role == 'HOMEROOM_TEACHER');
     }
 
     function isStudent() {
-      return isSignedIn() && getUserData().role == 'STUDENT';
+      return isSignedIn() && (getUserData().role == 'STUDENT' || getUserData().role == 'SISWA');
     }
 
     function isParent() {
-      return isSignedIn() && getUserData().role == 'PARENT';
+      return isSignedIn() && (getUserData().role == 'PARENT' || getUserData().role == 'ORANG_TUA');
+    }
+
+    function isValidScoreValue(val) {
+      return val >= 0.0 && val <= 100.0;
+    }
+
+    // Collection: scores
+    match /scores/{scoreId} {
+      allow read: if isSignedIn() && (
+        (isTeacher() && resource.data.teacherId == request.auth.uid) ||
+        (isHomeroomTeacher() && resource.data.classId == getUserData().classId) ||
+        (isStudent() && resource.data.studentId == request.auth.uid) ||
+        (isParent() && resource.data.studentId in getUserData().studentIds)
+      );
+      allow create, update: if isSignedIn() && isTeacher() &&
+        request.resource.data.teacherId == request.auth.uid &&
+        isValidScoreValue(request.resource.data.scoreValue);
+      allow delete: if isSignedIn() && isTeacher() && resource.data.teacherId == request.auth.uid;
     }
 
     // Collection: users

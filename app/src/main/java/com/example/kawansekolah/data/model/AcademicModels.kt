@@ -48,3 +48,73 @@ data class SubjectWithDetails(
     val weakestTopic: String? = null,
     val aiInsight: AiInsightEntity? = null
 )
+
+// === MODEL BARU ROLE GURU MAPEL & WALI KELAS ===
+
+data class Kelas(
+    val id: String = "",
+    val name: String = "",
+    val homeroomTeacherId: String = "",
+    val schoolLevel: String = "SMP",
+    val grade: Int = 9
+)
+
+data class Student(
+    val id: String = "",
+    val name: String = "",
+    val nis: String = "",
+    val classId: String = ""
+)
+
+data class Kompetensi(
+    val id: String = "",
+    val subjectId: String = "",
+    val code: String = "",
+    val name: String = ""
+)
+
+data class Periode(
+    val id: String = "",
+    val name: String = "",
+    val semester: String = "Ganjil",
+    val academicYear: String = "2025/2026"
+)
+
+data class Penugasan(
+    val id: String = "",
+    val teacherId: String = "",
+    val subjectId: String = "",
+    val classId: String = ""
+)
+
+enum class ScoreType(val label: String) {
+    KUIS_HARIAN("Kuis Harian"),
+    KARAKTER("Penilaian Karakter")
+}
+
+data class Score(
+    val id: String = "",
+    val studentId: String = "",
+    val studentName: String = "",
+    val teacherId: String = "",
+    val subjectId: String = "",
+    val classId: String = "",
+    val competenceId: String = "",
+    val periodId: String = "",
+    val scoreType: String = "KUIS_HARIAN",
+    val scoreValue: Double = 0.0,
+    val comment: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class AiInsight(
+    val id: String = "",
+    val studentId: String = "",
+    val classId: String = "",
+    val subjectId: String = "",
+    val averageScore: Double = 0.0,
+    val lowestScore: Double = 0.0,
+    val highestScore: Double = 0.0,
+    val recommendation: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
