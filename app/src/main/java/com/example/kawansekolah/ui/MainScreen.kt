@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.example.kawansekolah.data.model.NotificationItem
 import com.example.kawansekolah.data.model.NotificationType
 import com.example.kawansekolah.data.model.SchoolLevel
@@ -196,6 +198,8 @@ fun MainScreen(
         UserRole.ORANG_TUA -> "ORANG_TUA"
     }
 
+    val activeUserId = Firebase.auth.currentUser?.uid ?: "teacher_user"
+
     Scaffold(
         bottomBar = {
             if (!isKeyboardOpen && selectedSubjectForDetail == null) {
@@ -213,7 +217,7 @@ fun MainScreen(
             composable("guru_input") {
                 InputNilaiScreen(
                     userRole = roleString,
-                    userId = "guru_smp_01",
+                    userId = activeUserId,
                     onNavigateToCsvUpload = { navController.navigate("unggah_csv") },
                     onBack = { navController.popBackStack() }
                 )
@@ -221,27 +225,27 @@ fun MainScreen(
             composable("unggah_csv") {
                 UnggahCsvScreen(
                     userRole = roleString,
-                    userId = "guru_smp_01",
+                    userId = activeUserId,
                     onBack = { navController.popBackStack() }
                 )
             }
             composable("rekap_wali") {
                 RekapNilaiScreen(
                     userRole = roleString,
-                    userId = "guru_wali_01",
+                    userId = activeUserId,
                     onNavigateToStatistik = { navController.navigate("statistik") }
                 )
             }
             composable("statistik") {
                 StatistikScreen(
                     userRole = roleString,
-                    userId = if (userRole == UserRole.WALI_KELAS) "guru_wali_01" else "guru_smp_01"
+                    userId = activeUserId
                 )
             }
             composable("insight_page") {
                 InsightScreen(
                     userRole = roleString,
-                    userId = "guru_smp_01"
+                    userId = activeUserId
                 )
             }
             composable("guru_dashboard") {

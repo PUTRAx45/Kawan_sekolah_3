@@ -33,18 +33,18 @@ fun StatistikScreen(
 
     var scoresList by remember { mutableStateOf(emptyList<Double>()) }
     var isLoading by remember { mutableStateOf(true) }
-
-    val penugasan = remember(selectedClass.id) { ScoreRepository.getPenugasanForTeacher(userId) }
-    val assignedTeacherId = penugasan?.teacherId ?: userId
-    val canView = AccessPolicy.canViewClassScores(userRole, userId, selectedClass.homeroomTeacherId, assignedTeacherId)
+    var assignedTeacherId by remember { mutableStateOf(userId) }
 
     LaunchedEffect(selectedClass.id, userId) {
         isLoading = true
+        val penugasan = ScoreRepository.getPenugasanForTeacher(userId)
+        assignedTeacherId = penugasan?.teacherId ?: userId
         val scores = ScoreRepository.getScoresForClass(userRole, userId, selectedClass.id, selectedClass.homeroomTeacherId)
         scoresList = scores.map { it.scoreValue }
         isLoading = false
     }
 
+    val canView = AccessPolicy.canViewClassScores(userRole, userId, selectedClass.homeroomTeacherId, assignedTeacherId)
     val stats = StatisticsCalculator.calculateSummary(scoresList)
 
     Column(

@@ -42,7 +42,6 @@ fun BottomNavigationBar(
         UserRole.WALI_KELAS -> listOf(
             Triple("Rekap Kelas", Icons.Default.Class, "rekap_wali"),
             Triple("Statistik", Icons.Default.BarChart, "statistik"),
-            Triple("Insight AI", Icons.Default.AutoAwesome, "insight_page"),
             Triple("Profil", Icons.Default.Person, "profil")
         )
         UserRole.ORANG_TUA -> listOf(

@@ -31,6 +31,24 @@ service cloud.firestore {
       return val >= 0.0 && val <= 100.0;
     }
 
+    function hasMatchingPenugasan(teacherId, subjectId, classId) {
+      return exists(/databases/$(database)/documents/penugasan/$(teacherId + '_' + subjectId + '_' + classId));
+    }
+
+    function fieldUnchanged(key) {
+      return !(key in request.resource.data.keys()) || (resource != null && request.resource.data[key] == resource.data[key]);
+    }
+
+    function fieldNotSet(key) {
+      return !(key in request.resource.data.keys());
+    }
+
+    // Collection: penugasan
+    match /penugasan/{penugasanId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Collection: scores
     match /scores/{scoreId} {
       allow read: if isSignedIn() && (
@@ -39,9 +57,15 @@ service cloud.firestore {
         (isStudent() && resource.data.studentId == request.auth.uid) ||
         (isParent() && resource.data.studentId in getUserData().studentIds)
       );
-      allow create, update: if isSignedIn() && isTeacher() &&
+      allow create: if isSignedIn() && isTeacher() &&
         request.resource.data.teacherId == request.auth.uid &&
-        isValidScoreValue(request.resource.data.scoreValue);
+        isValidScoreValue(request.resource.data.scoreValue) &&
+        hasMatchingPenugasan(request.resource.data.teacherId, request.resource.data.subjectId, request.resource.data.classId);
+      allow update: if isSignedIn() && isTeacher() &&
+        resource.data.teacherId == request.auth.uid &&
+        request.resource.data.teacherId == request.auth.uid &&
+        isValidScoreValue(request.resource.data.scoreValue) &&
+        hasMatchingPenugasan(request.resource.data.teacherId, request.resource.data.subjectId, request.resource.data.classId);
       allow delete: if isSignedIn() && isTeacher() && resource.data.teacherId == request.auth.uid;
     }
 
@@ -52,11 +76,20 @@ service cloud.firestore {
         (isTeacher() && resource.data.teacherId == request.auth.uid) ||
         (isParent() && userId in getUserData().studentIds)
       );
-      allow create: if isSignedIn() && (
-        request.resource.data.role == 'TEACHER' ||
-        (isTeacher() && request.resource.data.teacherId == request.auth.uid)
-      );
-      allow update, delete: if isSignedIn() && (
+      allow create: if isSignedIn() &&
+        fieldNotSet('role') &&
+        fieldNotSet('classId') &&
+        fieldNotSet('studentIds') &&
+        fieldNotSet('teacherId');
+      allow update: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (isTeacher() && resource.data.teacherId == request.auth.uid)
+      ) &&
+        fieldUnchanged('role') &&
+        fieldUnchanged('classId') &&
+        fieldUnchanged('studentIds') &&
+        fieldUnchanged('teacherId');
+      allow delete: if isSignedIn() && (
         request.auth.uid == userId ||
         (isTeacher() && resource.data.teacherId == request.auth.uid)
       );

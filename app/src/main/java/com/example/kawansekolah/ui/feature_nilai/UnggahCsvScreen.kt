@@ -39,9 +39,19 @@ fun UnggahCsvScreen(
 
     val kelasList = remember { ScoreRepository.getDummyKelasList() }
     val subjectsList = remember { ScoreRepository.getDummySubjectsList() }
+    val periodeList = remember { ScoreRepository.getDummyPeriodeList() }
 
     var selectedClass by remember { mutableStateOf(kelasList.first()) }
     var selectedSubject by remember { mutableStateOf(subjectsList.first()) }
+    var selectedPeriode by remember { mutableStateOf(periodeList.first()) }
+
+    val kompetensiList = remember(selectedSubject.id) { ScoreRepository.getDummyKompetensiList(selectedSubject.id) }
+    var selectedKompetensi by remember { mutableStateOf(kompetensiList.first()) }
+
+    var expandedClass by remember { mutableStateOf(false) }
+    var expandedSubject by remember { mutableStateOf(false) }
+    var expandedPeriode by remember { mutableStateOf(false) }
+    var expandedKompetensi by remember { mutableStateOf(false) }
 
     val assignedTeacherId = selectedSubject.teacherId
     val canUpload = AccessPolicy.canUploadCsv(userRole, userId, assignedTeacherId)
@@ -67,8 +77,7 @@ fun UnggahCsvScreen(
                     val content = stream.bufferedReader().use { it.readText() }
                     csvInputText = content
                 }
-            } catch (e: Exception) {
-                // Ignore file read error
+            } catch (_: Exception) {
             }
         }
     }
@@ -105,11 +114,142 @@ fun UnggahCsvScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Parameter Target Penilaian", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+
+                        // Dropdown Kelas
+                        ExposedDropdownMenuBox(
+                            expanded = expandedClass,
+                            onExpandedChange = { expandedClass = !expandedClass }
+                        ) {
+                            OutlinedTextField(
+                                value = selectedClass.name,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Kelas Target") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedClass) },
+                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedClass,
+                                onDismissRequest = { expandedClass = false }
+                            ) {
+                                kelasList.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(item.name) },
+                                        onClick = {
+                                            selectedClass = item
+                                            expandedClass = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Dropdown Mapel
+                        ExposedDropdownMenuBox(
+                            expanded = expandedSubject,
+                            onExpandedChange = { expandedSubject = !expandedSubject }
+                        ) {
+                            OutlinedTextField(
+                                value = selectedSubject.name,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Mata Pelajaran") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSubject) },
+                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedSubject,
+                                onDismissRequest = { expandedSubject = false }
+                            ) {
+                                subjectsList.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(item.name) },
+                                        onClick = {
+                                            selectedSubject = item
+                                            expandedSubject = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Dropdown Periode
+                        ExposedDropdownMenuBox(
+                            expanded = expandedPeriode,
+                            onExpandedChange = { expandedPeriode = !expandedPeriode }
+                        ) {
+                            OutlinedTextField(
+                                value = selectedPeriode.name,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Periode / Semester") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPeriode) },
+                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedPeriode,
+                                onDismissRequest = { expandedPeriode = false }
+                            ) {
+                                periodeList.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(item.name) },
+                                        onClick = {
+                                            selectedPeriode = item
+                                            expandedPeriode = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Dropdown Kompetensi
+                        ExposedDropdownMenuBox(
+                            expanded = expandedKompetensi,
+                            onExpandedChange = { expandedKompetensi = !expandedKompetensi }
+                        ) {
+                            OutlinedTextField(
+                                value = "${selectedKompetensi.code} - ${selectedKompetensi.name}",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Kompetensi Dasar") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedKompetensi) },
+                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedKompetensi,
+                                onDismissRequest = { expandedKompetensi = false }
+                            ) {
+                                kompetensiList.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text("${item.code} - ${item.name}") },
+                                        onClick = {
+                                            selectedKompetensi = item
+                                            expandedKompetensi = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Pilih Berkas CSV / Tempel Teks Nilai:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Kelas Target: ${selectedClass.name} | Mapel: ${selectedSubject.name}", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         Text("Format: studentId, studentName, score, scoreType (KUIS_HARIAN / KARAKTER)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                         OutlinedButton(
@@ -229,8 +369,8 @@ fun UnggahCsvScreen(
                                 teacherId = userId,
                                 subjectId = selectedSubject.id,
                                 classId = selectedClass.id,
-                                competenceId = "komp_1",
-                                periodId = "per_1",
+                                competenceId = selectedKompetensi.id,
+                                periodId = selectedPeriode.id,
                                 scoreType = row.scoreType,
                                 scoreValue = row.score
                             )

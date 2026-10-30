@@ -7,7 +7,8 @@
     "start": "node server.js",
     "test-ai": "node test-ai.js",
     "test-greeting": "node test-greeting.js",
-    "test-moderation": "node test-moderation.js"
+    "test-moderation": "node test-moderation.js",
+    "test-rules": "node test-rules.js"
   },
   "dependencies": {
     "axios": "^1.7.9",

@@ -17,7 +17,6 @@ object ScoreRepository {
 
     private val firestore by lazy { Firebase.firestore }
 
-    // Demo Mode Flag
     var isDemoMode: Boolean = false
 
     private val localScores = mutableListOf<Score>()
@@ -34,11 +33,12 @@ object ScoreRepository {
             )
         )
 
+        // Dummy Penugasan: Satu guru HANYA satu mapel
         localPenugasan.addAll(
             listOf(
-                Penugasan("pen_1", "guru_smp_01", "subj_matematika_9", "cls_9a"),
-                Penugasan("pen_2", "guru_smp_01", "subj_bindo_9", "cls_9a"),
-                Penugasan("pen_3", "guru_smp_02", "subj_ipa_9", "cls_9b")
+                Penugasan("guru_smp_01_subj_matematika_9_cls_9a", "guru_smp_01", "subj_matematika_9", "cls_9a"),
+                Penugasan("guru_smp_03_subj_bindo_9_cls_9a", "guru_smp_03", "subj_bindo_9", "cls_9a"),
+                Penugasan("guru_smp_02_subj_ipa_9_cls_9b", "guru_smp_02", "subj_ipa_9", "cls_9b")
             )
         )
     }
@@ -135,13 +135,11 @@ object ScoreRepository {
         classId: String,
         classHomeroomTeacherId: String
     ): List<Score> {
-        // Wali Kelas: Hanya membaca kelas jika classHomeroomTeacherId == userId
         if (AccessPolicy.isWaliKelas(userRole)) {
             if (userId.isBlank() || userId != classHomeroomTeacherId) {
                 return emptyList()
             }
         } else if (AccessPolicy.isGuruMapel(userRole)) {
-            // Guru Mapel: Hanya membaca nilai mapel yang ditugaskan padanya
             val assignedSubjectIds = getAssignedSubjectIdsForTeacherAndClass(userId, classId)
             if (assignedSubjectIds.isEmpty()) {
                 return emptyList()
@@ -149,7 +147,6 @@ object ScoreRepository {
             val allClassScores = fetchClassScoresInternal(classId)
             return allClassScores.filter { it.subjectId in assignedSubjectIds }
         } else {
-            // Role SISWA / ORANG_TUA / Lainnya -> Kosong
             return emptyList()
         }
 
@@ -169,12 +166,35 @@ object ScoreRepository {
         }
     }
 
-    fun getAssignedSubjectIdsForTeacherAndClass(teacherId: String, classId: String): List<String> {
-        return localPenugasan.filter { it.teacherId == teacherId && it.classId == classId }.map { it.subjectId }
+    suspend fun getAssignedSubjectIdsForTeacherAndClass(teacherId: String, classId: String): List<String> {
+        return try {
+            val snapshot = firestore.collection("penugasan")
+                .whereEqualTo("teacherId", teacherId)
+                .whereEqualTo("classId", classId)
+                .get()
+                .await()
+            val list = snapshot.toObjects(Penugasan::class.java)
+            val ids = list.map { it.subjectId }
+            if (ids.isNotEmpty()) ids else if (isDemoMode) localPenugasan.filter { it.teacherId == teacherId && it.classId == classId }.map { it.subjectId } else emptyList()
+        } catch (_: Exception) {
+            if (isDemoMode) localPenugasan.filter { it.teacherId == teacherId && it.classId == classId }.map { it.subjectId } else emptyList()
+        }
     }
 
-    fun getPenugasanForTeacher(teacherId: String): Penugasan? {
-        return localPenugasan.firstOrNull { it.teacherId == teacherId } ?: localPenugasan.firstOrNull()
+    suspend fun getPenugasanForTeacher(teacherId: String): Penugasan? {
+        if (teacherId.isBlank()) return null
+
+        return try {
+            val snapshot = firestore.collection("penugasan")
+                .whereEqualTo("teacherId", teacherId)
+                .limit(1)
+                .get()
+                .await()
+            val list = snapshot.toObjects(Penugasan::class.java)
+            if (list.isNotEmpty()) list.first() else if (isDemoMode) localPenugasan.firstOrNull { it.teacherId == teacherId } else null
+        } catch (_: Exception) {
+            if (isDemoMode) localPenugasan.firstOrNull { it.teacherId == teacherId } else null
+        }
     }
 
     // Dummy Helpers
@@ -197,7 +217,7 @@ object ScoreRepository {
     fun getDummySubjectsList(): List<SubjectEntity> {
         return listOf(
             SubjectEntity("subj_matematika_9", "guru_smp_01", "Matematika", "SMP", 9),
-            SubjectEntity("subj_bindo_9", "guru_smp_01", "Bahasa Indonesia", "SMP", 9)
+            SubjectEntity("subj_bindo_9", "guru_smp_03", "Bahasa Indonesia", "SMP", 9)
         )
     }
 

@@ -21,6 +21,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.example.kawansekolah.data.model.GradeItem
 import com.example.kawansekolah.data.model.SubjectEntity
 import com.example.kawansekolah.data.model.TopicEntity
@@ -142,6 +144,7 @@ fun GuruScreen(
                                     val sG = scoreGeometri.toDoubleOrNull() ?: 90.0
                                     val sP = scorePitagoras.toDoubleOrNull() ?: 70.0
 
+                                    val activeTeacherId = com.google.firebase.Firebase.auth.currentUser?.uid ?: "teacher_user"
                                     val dummyStudent = User(
                                         uid = "3dvXsUYZhjFbXasyrMXSDGwNq2zN",
                                         name = "Ahmad Budi",
@@ -152,15 +155,15 @@ fun GuruScreen(
                                     )
                                     val dummySubject = SubjectEntity(
                                         id = "subj_matematika_9",
-                                        teacherId = "guru_smp_01",
+                                        teacherId = activeTeacherId,
                                         name = "Matematika",
                                         schoolLevel = "SMP",
                                         grade = 9
                                     )
                                     val topicList = listOf(
-                                        Pair(TopicEntity("top_aritmatika", "guru_smp_01", "subj_matematika_9", "Aritmatika", 1.0), sA),
-                                        Pair(TopicEntity("top_geometri", "guru_smp_01", "subj_matematika_9", "Geometri", 2.0), sG),
-                                        Pair(TopicEntity("top_pitagoras", "guru_smp_01", "subj_matematika_9", "Pitagoras", 1.5), sP)
+                                        Pair(TopicEntity("top_aritmatika", activeTeacherId, "subj_matematika_9", "Aritmatika", 1.0), sA),
+                                        Pair(TopicEntity("top_geometri", activeTeacherId, "subj_matematika_9", "Geometri", 2.0), sG),
+                                        Pair(TopicEntity("top_pitagoras", activeTeacherId, "subj_matematika_9", "Pitagoras", 1.5), sP)
                                     )
 
                                     academicViewModel.uploadGradesAndGenerateInsight(dummyStudent, dummySubject, topicList)
@@ -193,7 +196,8 @@ fun GuruScreen(
                             Button(
                                 onClick = {
                                     if (newSubjectName.isNotBlank()) {
-                                        academicViewModel.addSubject(newSubjectName.trim(), "SMP", 9, "guru_smp_01")
+                                        val activeTeacherId = com.google.firebase.Firebase.auth.currentUser?.uid ?: "teacher_user"
+                                        academicViewModel.addSubject(newSubjectName.trim(), "SMP", 9, activeTeacherId)
                                         statusMessage = "✅ Mapel '$newSubjectName' berhasil ditambahkan!"
                                         newSubjectName = ""
                                     }
