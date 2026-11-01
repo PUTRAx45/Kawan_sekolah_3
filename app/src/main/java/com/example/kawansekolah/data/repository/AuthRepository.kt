@@ -176,12 +176,14 @@ object AuthRepository {
             } catch (e: Exception) {
                 // Offline / UI Preview Fallback Mode
                 val cleanId = identifier.trim().lowercase()
-                when {
+                val fallbackUser = when {
                     cleanId.contains("guru.wali") || cleanId.contains("wali") -> User(uid = "guru_wali_01", name = "Siti Aminah", email = "guru.wali@kawansekolah.sch.id", role = "WALI_KELAS", className = "9-A")
                     cleanId.contains("guru") -> User(uid = "guru_smp_01", name = "Budi Santoso", email = "guru@kawansekolah.sch.id", role = "GURU")
                     cleanId.contains("ortu") -> User(uid = "ortu_1", name = "Bapak Ahmad", email = "ortu.ahmad@kawansekolah.local", role = "ORANG_TUA", studentIds = listOf("std_1"))
                     else -> User(uid = "std_1", name = "Ahmad Budi", email = "12345@kawansekolah.local", role = "SISWA", className = "9-A")
-                }.also { setCachedUser(it) }
+                }
+                setCachedUser(fallbackUser)
+                loggedUser = fallbackUser
             }
         }
 
