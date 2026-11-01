@@ -17,7 +17,7 @@ object ScoreRepository {
 
     private val firestore by lazy { Firebase.firestore }
 
-    var isDemoMode: Boolean = false
+    var isDemoMode: Boolean = true
 
     private val localScores = mutableListOf<Score>()
     private val localPenugasan = mutableListOf<Penugasan>()

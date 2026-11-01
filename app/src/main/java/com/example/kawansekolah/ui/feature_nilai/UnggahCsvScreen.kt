@@ -96,6 +96,7 @@ fun UnggahCsvScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .imePadding()
     ) {
         TopAppBar(
             title = { Text("Unggah Nilai via CSV", fontWeight = FontWeight.Bold) },

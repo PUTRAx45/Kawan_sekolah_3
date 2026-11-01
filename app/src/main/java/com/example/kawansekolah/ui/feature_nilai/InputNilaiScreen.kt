@@ -71,6 +71,7 @@ fun InputNilaiScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .imePadding()
     ) {
         TopAppBar(
             title = { Text("Input Nilai Siswa", fontWeight = FontWeight.Bold) },

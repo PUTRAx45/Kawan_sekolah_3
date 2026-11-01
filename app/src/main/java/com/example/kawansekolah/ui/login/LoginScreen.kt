@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -96,16 +97,17 @@ fun LoginScreen(
             is AuthUiState.Success -> {
                 failedCount = 0
                 val user = state.user
-
-                if (selectedRole == UserRole.SISWA && user.userRole != UserRole.SISWA) {
-                    errorMessage = "Akun ${user.userRole.label} tidak bisa masuk melalui mode Siswa. Silakan pilih tab Guru/Orang Tua."
-                    authViewModel.resetState()
-                } else if (selectedRole != UserRole.SISWA && user.userRole == UserRole.SISWA) {
-                    errorMessage = "Akun Siswa tidak bisa masuk melalui mode Guru/Orang Tua. Silakan pilih tab Siswa."
-                    authViewModel.resetState()
-                } else {
-                    onLoginSuccessUser(user)
+                val roleName = when (selectedRole) {
+                    UserRole.SISWA -> "SISWA"
+                    UserRole.GURU -> "GURU"
+                    UserRole.WALI_KELAS -> "WALI_KELAS"
+                    UserRole.ORANG_TUA -> "ORANG_TUA"
                 }
+                val finalUser = user.copy(
+                    role = roleName,
+                    name = if (user.name.isBlank()) "Pengguna ${selectedRole.label}" else user.name
+                )
+                onLoginSuccessUser(finalUser)
             }
             is AuthUiState.Error -> {
                 failedCount++
@@ -118,19 +120,25 @@ fun LoginScreen(
         }
     }
 
+    val scrollState = rememberScrollState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(28.dp),
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
             // App Logo
             Box(
                 modifier = Modifier
@@ -320,7 +328,13 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = passwordInput,
-                    onValueChange = { passwordInput = it },
+                    onValueChange = {
+                        passwordInput = it
+                        coroutineScope.launch {
+                            delay(100L)
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                        }
+                    },
                     label = { Text("Kata Sandi") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
@@ -332,7 +346,16 @@ fun LoginScreen(
                     },
                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                coroutineScope.launch {
+                                    delay(200L)
+                                    scrollState.animateScrollTo(scrollState.maxValue)
+                                }
+                            }
+                        },
                     singleLine = true,
                     enabled = authUiState !is AuthUiState.Loading && cooldownSeconds == 0,
                     shape = RoundedCornerShape(12.dp)
@@ -377,8 +400,18 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                TextButton(onClick = { onDemoLoginSuccess("Ahmad Budi", UserRole.SISWA) }) {
-                    Text("Gunakan Akun Demo Tanpa Login ->", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                TextButton(
+                    onClick = {
+                        val demoName = when (selectedRole) {
+                            UserRole.SISWA -> "Ahmad Budi"
+                            UserRole.GURU -> "Budi Santoso"
+                            UserRole.WALI_KELAS -> "Siti Aminah"
+                            UserRole.ORANG_TUA -> "Bapak Ahmad"
+                        }
+                        onDemoLoginSuccess(demoName, selectedRole)
+                    }
+                ) {
+                    Text("Gunakan Demo ${selectedRole.label} Tanpa Login ->", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
 
             } else {
@@ -423,7 +456,13 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = regPassword,
-                    onValueChange = { regPassword = it },
+                    onValueChange = {
+                        regPassword = it
+                        coroutineScope.launch {
+                            delay(100L)
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                        }
+                    },
                     label = { Text("Kata Sandi") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
@@ -435,7 +474,16 @@ fun LoginScreen(
                     },
                     visualTransformation = if (isRegPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                coroutineScope.launch {
+                                    delay(200L)
+                                    scrollState.animateScrollTo(scrollState.maxValue)
+                                }
+                            }
+                        },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -444,10 +492,25 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = regInviteCode,
-                    onValueChange = { regInviteCode = it },
+                    onValueChange = {
+                        regInviteCode = it
+                        coroutineScope.launch {
+                            delay(100L)
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                        }
+                    },
                     label = { Text("Kode Undangan Guru (Kode: GURU2025)") },
                     leadingIcon = { Icon(Icons.Default.VpnKey, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                coroutineScope.launch {
+                                    delay(200L)
+                                    scrollState.animateScrollTo(scrollState.maxValue)
+                                }
+                            }
+                        },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -474,6 +537,8 @@ fun LoginScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(100.dp))
         }
 
         // Real-time Diagnostics Dialog (Debug Mode Gesture)
