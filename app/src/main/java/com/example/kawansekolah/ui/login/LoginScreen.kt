@@ -1,24 +1,23 @@
 package com.example.kawansekolah.ui.login
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,16 +27,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kawansekolah.BuildConfig
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.User
 import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.utils.ConnectionDiagnostics
-import com.example.kawansekolah.utils.ServiceCheckResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     initialRole: UserRole = UserRole.SISWA,
@@ -48,10 +44,8 @@ fun LoginScreen(
     val authViewModel: AuthViewModel = viewModel()
     val authUiState by authViewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
-    var isRegisterTab by remember { mutableStateOf(false) }
-
-    // Form State
     var selectedRole by remember { mutableStateOf(initialRole) }
     var identifierInput by remember {
         mutableStateOf(
@@ -65,48 +59,24 @@ fun LoginScreen(
     }
     var passwordInput by remember { mutableStateOf("123456") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-
-    // Register State
-    var regName by remember { mutableStateOf("") }
-    var regEmail by remember { mutableStateOf("") }
-    var regPassword by remember { mutableStateOf("") }
-    var isRegPasswordVisible by remember { mutableStateOf(false) }
-    var regInviteCode by remember { mutableStateOf("") }
-
     var errorMessage by remember { mutableStateOf("") }
 
-    // Rate limiting: 5 failed attempts -> 30s cooldown
-    var failedCount by remember { mutableIntStateOf(0) }
-    var cooldownSeconds by remember { mutableIntStateOf(0) }
-
-    // Diagnostics Dialog (Long-Press Gesture on Scolarsia Title)
-    var showDiagnosticsDialog by remember { mutableStateOf(false) }
-    var isCheckingDiagnostics by remember { mutableStateOf(false) }
-    var diagnosticsResults by remember { mutableStateOf<List<ServiceCheckResult>?>(null) }
-
-    // Real-Time Polling Loop for Diagnostics when Dialog is Visible
-    LaunchedEffect(showDiagnosticsDialog) {
-        if (showDiagnosticsDialog) {
-            isCheckingDiagnostics = true
-            while (showDiagnosticsDialog) {
-                diagnosticsResults = ConnectionDiagnostics.checkAllServices()
-                isCheckingDiagnostics = false
-                delay(2000L) // Real-Time Refresh Latency every 2 seconds
-            }
-        }
+    val roleTitle = when (selectedRole) {
+        UserRole.GURU -> "Guru"
+        UserRole.WALI_KELAS -> "Wali kelas"
+        UserRole.SISWA -> "Siswa"
+        UserRole.ORANG_TUA -> "Orang tua"
     }
 
-    LaunchedEffect(cooldownSeconds) {
-        if (cooldownSeconds > 0) {
-            delay(1000L)
-            cooldownSeconds--
-        }
+    val fieldLabel = when (selectedRole) {
+        UserRole.SISWA -> "NISN atau email"
+        UserRole.ORANG_TUA -> "Email atau nomor HP"
+        else -> "Email"
     }
 
     LaunchedEffect(authUiState) {
         when (val state = authUiState) {
             is AuthUiState.Success -> {
-                failedCount = 0
                 val user = state.user
                 val roleName = when (selectedRole) {
                     UserRole.SISWA -> "SISWA"
@@ -121,515 +91,208 @@ fun LoginScreen(
                 onLoginSuccessUser(finalUser)
             }
             is AuthUiState.Error -> {
-                failedCount++
-                if (failedCount >= 5) {
-                    cooldownSeconds = 30
-                    failedCount = 0
-                }
+                errorMessage = state.message
             }
             else -> {}
         }
     }
 
-    val scrollState = rememberScrollState()
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .imePadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // App Logo
+            // Blue Scolarsia Badge Logo
             Box(
                 modifier = Modifier
-                    .size(76.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Color(0xFF2563EB)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.logo_scolarsia),
                     contentDescription = "Logo Scolarsia",
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(54.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // App Title (Long-Press on "Scolarsia" activates real-time diagnostics dialog in Debug)
             Text(
                 text = "Scolarsia",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.combinedClickable(
-                    onClick = {},
-                    onLongClick = {
-                        if (BuildConfig.DEBUG) {
-                            showDiagnosticsDialog = true
-                        }
-                    }
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            // Role Badge Pill
+            Surface(
+                modifier = Modifier.padding(top = 6.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFEFF6FF)
+            ) {
+                Text(
+                    text = roleTitle,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2563EB),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Masuk sebagai $roleTitle",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Text(
-                text = "AI Analytics for Better Learning",
+                text = "Gunakan akun yang diberikan sekolah",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 2.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // Tab Switcher
-            TabRow(
-                selectedTabIndex = if (isRegisterTab) 1 else 0,
+            // Field 1: Email / NISN / HP
+            OutlinedTextField(
+                value = identifierInput,
+                onValueChange = { identifierInput = it },
+                label = { Text(fieldLabel) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Field 2: Password
+            OutlinedTextField(
+                value = passwordInput,
+                onValueChange = {
+                    passwordInput = it
+                    coroutineScope.launch {
+                        delay(100L)
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
+                },
+                label = { Text("Kata sandi") },
+                trailingIcon = {
+                    val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        Icon(imageVector = icon, contentDescription = null)
+                    }
+                },
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
-                Tab(
-                    selected = !isRegisterTab,
-                    onClick = {
-                        isRegisterTab = false
-                        errorMessage = ""
-                        authViewModel.resetState()
-                    },
-                    text = { Text("Masuk", fontWeight = FontWeight.Bold) }
-                )
-                Tab(
-                    selected = isRegisterTab,
-                    onClick = {
-                        isRegisterTab = true
-                        errorMessage = ""
-                        authViewModel.resetState()
-                    },
-                    text = { Text("Daftar Guru", fontWeight = FontWeight.Bold) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            if (!BuildConfig.USE_EMULATOR && com.example.kawansekolah.utils.DevHost.isPlaceholderBaseUrl()) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "⚠️ Perhatian: BASE_URL backend online belum diisi di app/build.gradle.kts (masih placeholder). Fitur AI memerlukan URL backend, tetapi Login & Firebase Cloud tetap dapat diuji.",
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 14.sp
-                        )
-                    }
-                }
-            }
-
-            if (!isRegisterTab) {
-                // LOGIN TAB
-                Text(
-                    text = "Pilih Peran Akun:",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val roles = listOf(
-                        Triple(UserRole.SISWA, "Siswa", Icons.Default.School),
-                        Triple(UserRole.GURU, "Guru Mapel", Icons.Default.Psychology),
-                        Triple(UserRole.WALI_KELAS, "Wali Kelas", Icons.Default.Class),
-                        Triple(UserRole.ORANG_TUA, "Orang Tua", Icons.Default.People)
-                    )
-
-                    roles.forEach { (role, label, icon) ->
-                        val isSelected = selectedRole == role
-                        Surface(
-                            onClick = {
-                                selectedRole = role
-                                identifierInput = when (role) {
-                                    UserRole.SISWA -> "12345"
-                                    UserRole.GURU -> "guru@kawansekolah.sch.id"
-                                    UserRole.WALI_KELAS -> "guru.wali@kawansekolah.sch.id"
-                                    UserRole.ORANG_TUA -> "ortu.ahmad@kawansekolah.local"
-                                }
-                                passwordInput = "123456"
-                                errorMessage = ""
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(imageVector = icon, contentDescription = label, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    textAlign = TextAlign.Center,
-                                    maxLines = 1
-                                )
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            coroutineScope.launch {
+                                delay(200L)
+                                scrollState.animateScrollTo(scrollState.maxValue)
                             }
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                val fieldLabel = when (selectedRole) {
-                    UserRole.SISWA -> "Nomor NISN Siswa"
-                    UserRole.GURU -> "Email Guru Mapel"
-                    UserRole.WALI_KELAS -> "Email Wali Kelas"
-                    UserRole.ORANG_TUA -> "Email Orang Tua"
-                }
-
-                OutlinedTextField(
-                    value = identifierInput,
-                    onValueChange = { identifierInput = it },
-                    label = { Text(fieldLabel) },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = authUiState !is AuthUiState.Loading && cooldownSeconds == 0,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = passwordInput,
-                    onValueChange = {
-                        passwordInput = it
-                        coroutineScope.launch {
-                            delay(100L)
-                            scrollState.animateScrollTo(scrollState.maxValue)
-                        }
                     },
-                    label = { Text("Kata Sandi") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    trailingIcon = {
-                        val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                        val description = if (isPasswordVisible) "Sembunyikan Kata Sandi" else "Tampilkan Kata Sandi"
-                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                            Icon(imageVector = icon, contentDescription = description)
-                        }
-                    },
-                    visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { focusState ->
-                            if (focusState.isFocused) {
-                                coroutineScope.launch {
-                                    delay(200L)
-                                    scrollState.animateScrollTo(scrollState.maxValue)
-                                }
-                            }
-                        },
-                    singleLine = true,
-                    enabled = authUiState !is AuthUiState.Loading && cooldownSeconds == 0,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                val activeError = if (errorMessage.isNotBlank()) errorMessage else if (authUiState is AuthUiState.Error) (authUiState as AuthUiState.Error).message else ""
-
-                if (activeError.isNotEmpty()) {
-                    Text(
-                        text = activeError,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = {
-                        errorMessage = ""
-                        authViewModel.login(identifierInput, passwordInput)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(25.dp),
-                    enabled = authUiState !is AuthUiState.Loading && cooldownSeconds == 0
-                ) {
-                    if (authUiState is AuthUiState.Loading) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Memproses Login...", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        }
-                    } else if (cooldownSeconds > 0) {
-                        Text("Tunggu $cooldownSeconds Detik...", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    } else {
-                        Text("Masuk", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                TextButton(
-                    onClick = {
-                        val demoName = when (selectedRole) {
-                            UserRole.SISWA -> "Ahmad Budi"
-                            UserRole.GURU -> "Budi Santoso"
-                            UserRole.WALI_KELAS -> "Siti Aminah"
-                            UserRole.ORANG_TUA -> "Bapak Ahmad"
-                        }
-                        onDemoLoginSuccess(demoName, selectedRole)
-                    }
-                ) {
-                    Text("Gunakan Demo ${selectedRole.label} Tanpa Login ->", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                }
-
-            } else {
-                // REGISTER GURU TAB
-                Text(
-                    text = "Pendaftaran Khusus Guru",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-                Text(
-                    text = "Siswa dan Orang Tua didaftarkan langsung oleh Guru melalui dashboard.",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Start).padding(bottom = 12.dp)
-                )
-
-                OutlinedTextField(
-                    value = regName,
-                    onValueChange = { regName = it },
-                    label = { Text("Nama Lengkap Guru") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = regEmail,
-                    onValueChange = { regEmail = it },
-                    label = { Text("Email Resmi Guru") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = regPassword,
-                    onValueChange = {
-                        regPassword = it
-                        coroutineScope.launch {
-                            delay(100L)
-                            scrollState.animateScrollTo(scrollState.maxValue)
-                        }
-                    },
-                    label = { Text("Kata Sandi") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    trailingIcon = {
-                        val icon = if (isRegPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                        val description = if (isRegPasswordVisible) "Sembunyikan Kata Sandi" else "Tampilkan Kata Sandi"
-                        IconButton(onClick = { isRegPasswordVisible = !isRegPasswordVisible }) {
-                            Icon(imageVector = icon, contentDescription = description)
-                        }
-                    },
-                    visualTransformation = if (isRegPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { focusState ->
-                            if (focusState.isFocused) {
-                                coroutineScope.launch {
-                                    delay(200L)
-                                    scrollState.animateScrollTo(scrollState.maxValue)
-                                }
-                            }
-                        },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = regInviteCode,
-                    onValueChange = {
-                        regInviteCode = it
-                        coroutineScope.launch {
-                            delay(100L)
-                            scrollState.animateScrollTo(scrollState.maxValue)
-                        }
-                    },
-                    label = { Text("Kode Undangan Guru (Kode: GURU2025)") },
-                    leadingIcon = { Icon(Icons.Default.VpnKey, contentDescription = null) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { focusState ->
-                            if (focusState.isFocused) {
-                                coroutineScope.launch {
-                                    delay(200L)
-                                    scrollState.animateScrollTo(scrollState.maxValue)
-                                }
-                            }
-                        },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                if (authUiState is AuthUiState.Error) {
-                    val err = (authUiState as AuthUiState.Error).message
-                    Text(text = err, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = { authViewModel.registerTeacher(regName, regEmail, regPassword, regInviteCode) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(25.dp),
-                    enabled = authUiState !is AuthUiState.Loading
-                ) {
-                    if (authUiState is AuthUiState.Loading) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
-                    } else {
-                        Text("Daftar Akun Guru", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(100.dp))
-        }
-
-        // Real-time Diagnostics Dialog (Debug Mode Gesture)
-        if (showDiagnosticsDialog) {
-            AlertDialog(
-                onDismissRequest = { showDiagnosticsDialog = false },
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Cek Koneksi Real-Time Scolarsia", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                            Text("LIVE", fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        if (diagnosticsResults == null) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text("Memeriksa status port & server...", fontSize = 12.sp)
-                            }
-                        } else {
-                            diagnosticsResults?.forEach { res ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(res.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                        Text(res.endpoint + " (" + res.details + ")", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    if (res.isOk) {
-                                        Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                                            Text("BERHASIL (${res.latencyMs}ms)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                        }
-                                    } else {
-                                        Badge(containerColor = MaterialTheme.colorScheme.errorContainer) {
-                                            Text("GAGAL", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
-                                        }
-                                    }
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = ConnectionDiagnostics.getDiagnosticHint(),
-                                fontSize = 10.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 13.sp
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = { showDiagnosticsDialog = false }) {
-                        Text("Tutup")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = {
-                        isCheckingDiagnostics = true
-                        coroutineScope.launch {
-                            diagnosticsResults = ConnectionDiagnostics.checkAllServices()
-                            isCheckingDiagnostics = false
-                        }
-                    }) {
-                        Text("Refresh Sekarang")
-                    }
-                },
-                shape = RoundedCornerShape(20.dp)
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
+
+            val activeError = if (errorMessage.isNotBlank()) errorMessage else if (authUiState is AuthUiState.Error) (authUiState as AuthUiState.Error).message else ""
+
+            if (activeError.isNotEmpty()) {
+                Text(
+                    text = activeError,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Primary Blue Button "Masuk"
+            Button(
+                onClick = {
+                    errorMessage = ""
+                    authViewModel.login(identifierInput, passwordInput)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                enabled = authUiState !is AuthUiState.Loading
+            ) {
+                if (authUiState is AuthUiState.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text("Masuk", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Lupa kata sandi? Hubungi administrator sekolah",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "← Ganti peran",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2563EB),
+                modifier = Modifier
+                    .clickable { onBackToRoleSelection() }
+                    .padding(8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TextButton(
+                onClick = {
+                    val demoName = when (selectedRole) {
+                        UserRole.SISWA -> "Ahmad Budi"
+                        UserRole.GURU -> "Budi Santoso"
+                        UserRole.WALI_KELAS -> "Siti Aminah"
+                        UserRole.ORANG_TUA -> "Bapak Ahmad"
+                    }
+                    onDemoLoginSuccess(demoName, selectedRole)
+                }
+            ) {
+                Text(
+                    text = "Gunakan Demo ${selectedRole.label} Tanpa Login ->",
+                    fontSize = 12.sp,
+                    color = Color(0xFF2563EB),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
