@@ -303,13 +303,22 @@ fun MainScreen(
             composable("profil") {
                 ProfilScreen(
                     userName = userName,
-                    userRole = userRole,
-                    currentThemeMode = currentThemeMode,
-                    unreadCount = unreadCount,
-                    onNotificationClick = handleNotificationClick,
-                    onThemeModeChange = onThemeModeChange,
-                    onLogout = onLogout
+                    userRole = userRole.name,
+                    userEmail = "user@scolarsia.sch.id",
+                    onLogoutClick = onLogout,
+                    onUbahKataSandiClick = { navController.navigate("ubah_kata_sandi") },
+                    onPrivasiNotifikasiClick = { navController.navigate("privasi_notifikasi") },
+                    onPerangkatSesiClick = { navController.navigate("perangkat_sesi") }
                 )
+            }
+            composable("ubah_kata_sandi") {
+                com.example.kawansekolah.ui.profil.UbahKataSandiScreen(onBackClick = { navController.popBackStack() })
+            }
+            composable("privasi_notifikasi") {
+                com.example.kawansekolah.ui.profil.PrivasiNotifikasiScreen(onBackClick = { navController.popBackStack() })
+            }
+            composable("perangkat_sesi") {
+                com.example.kawansekolah.ui.profil.PerangkatSesiScreen(onBackClick = { navController.popBackStack() })
             }
             composable("tampilan") {
                 TampilanScreen(

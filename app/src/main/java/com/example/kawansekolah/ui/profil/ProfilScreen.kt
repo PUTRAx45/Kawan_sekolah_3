@@ -1,7 +1,8 @@
 package com.example.kawansekolah.ui.profil
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,167 +11,288 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.ui.components.TopBarArea
-import com.example.kawansekolah.ui.profil.components.ProfileListItem
-import com.example.kawansekolah.ui.tampilan.components.TampilanCard
-import com.example.kawansekolah.ui.theme.ThemeMode
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilScreen(
-    userName: String = "Budi Santoso",
-    userRole: UserRole = UserRole.SISWA,
-    currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
-    unreadCount: Int = 0,
-    onNotificationClick: () -> Unit = {},
-    onThemeModeChange: (ThemeMode) -> Unit = {},
-    onLogout: () -> Unit = {}
+    userName: String,
+    userRole: String = "SISWA",
+    userEmail: String = "user@scolarsia.sch.id",
+    onLogoutClick: () -> Unit = {},
+    onUbahKataSandiClick: () -> Unit = {},
+    onPrivasiNotifikasiClick: () -> Unit = {},
+    onPerangkatSesiClick: () -> Unit = {}
 ) {
-    val isDigitsOnly = remember(userName) { userName.all { it.isDigit() } }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
-    val displayName = remember(userName, isDigitsOnly) {
-        if (isDigitsOnly && userRole == UserRole.SISWA) {
-            if (userName == "0052025100" || userName == "20251004") userName
-            else "Siswa NISN $userName"
-        } else {
-            userName
-        }
+    val roleLabel = when (userRole.uppercase()) {
+        "GURU", "TEACHER", "GURU_MAPEL" -> "Guru mapel • Matematika, IPA"
+        "WALI_KELAS", "HOMEROOM_TEACHER" -> "Guru mapel • Wali kelas IX A"
+        "ORANG_TUA", "PARENT" -> "Orang tua / wali • Scolarsia"
+        else -> "Siswa • Kelas IX A"
     }
 
-    val idNumber = remember(userName) {
-        if (isDigitsOnly) userName
-        else {
-            val hash = kotlin.math.abs(userName.trim().lowercase().hashCode()) % 89999 + 10000
-            "00520$hash"
-        }
-    }
-
-    val roleSubtitle = when (userRole) {
-        UserRole.SISWA -> "Kelas 9-A • NISN: $idNumber"
-        UserRole.GURU -> "Pengajar Utama • NIP: 198805$idNumber"
-        UserRole.WALI_KELAS -> "Wali Kelas 9-A • NIP: 198504$idNumber"
-        UserRole.ORANG_TUA -> "Wali Murid • ID: ORTU-$idNumber"
-    }
-
-    val formattedEmail = remember(displayName, userRole) {
-        val cleanName = displayName.lowercase().replace(" ", ".")
-        val domain = when (userRole) {
-            UserRole.SISWA -> "siswa.kawansekolah.sch.id"
-            UserRole.GURU -> "guru.kawansekolah.sch.id"
-            UserRole.WALI_KELAS -> "wali.kawansekolah.sch.id"
-            UserRole.ORANG_TUA -> "ortu.kawansekolah.sch.id"
-        }
-        "$cleanName@$domain"
-    }
+    val initials = if (userName.isNotBlank()) {
+        val parts = userName.trim().split(" ")
+        if (parts.size >= 2) "${parts[0].take(1)}${parts[1].take(1)}".uppercase() else parts[0].take(2).uppercase()
+    } else "US"
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
-        TopBarArea(
-            userName = displayName,
-            unreadCount = unreadCount,
-            onNotificationClick = onNotificationClick
+        TopAppBar(
+            title = { Text("Profil saya", fontWeight = FontWeight.Bold) }
         )
 
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = when (userRole) {
-                        UserRole.SISWA -> Icons.Default.School
-                        UserRole.GURU -> Icons.Default.Psychology
-                        UserRole.WALI_KELAS -> Icons.Default.Class
-                        UserRole.ORANG_TUA -> Icons.Default.People
-                    },
-                    contentDescription = "Profile Avatar",
-                    modifier = Modifier.size(60.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = displayName,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = roleSubtitle,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
+            // Profile Card Header
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    ProfileListItem(Icons.Default.Email, "Email Akun", formattedEmail)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-                    ProfileListItem(Icons.Default.Badge, "Peran / Jabatan", userRole.label)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-                    ProfileListItem(Icons.Default.School, "Sekolah", "SMA Negeri 1 Jakarta")
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-                    ProfileListItem(Icons.Default.Star, "Poin Prestasi", "450 Poin")
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = initials,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = userName,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = roleLabel,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                        Text(
+                            text = userEmail,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Academic Info Section
+            Text("Informasi akademik", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            TampilanCard(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                currentThemeMode = currentThemeMode,
-                onThemeModeChange = onThemeModeChange
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            OutlinedButton(
-                onClick = onLogout,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Keluar dari Akun", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Class, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Jenjang & kelas", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("SMP • IX A, IX B", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Mata pelajaran", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Matematika • IPA", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(110.dp))
+            // Security & Privacy Section
+            Text("Keamanan & privasi akun", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    ProfileMenuRow(
+                        icon = Icons.Default.Lock,
+                        title = "Ubah kata sandi",
+                        subtitle = "Jaga keamanan akun pribadi",
+                        onClick = onUbahKataSandiClick
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    ProfileMenuRow(
+                        icon = Icons.Default.Security,
+                        title = "Privasi & notifikasi",
+                        subtitle = "Atur izin dan notifikasi",
+                        onClick = onPrivasiNotifikasiClick
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    ProfileMenuRow(
+                        icon = Icons.Default.Phonelink,
+                        title = "Perangkat & sesi",
+                        subtitle = "Kelola perangkat yang masuk",
+                        badgeText = "1 aktif",
+                        onClick = onPerangkatSesiClick
+                    )
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ) {
+                Text(
+                    text = "Akses nilai siswa mengikuti kewenangan dan relasi akun.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Logout Button
+            OutlinedButton(
+                onClick = { showLogoutDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Keluar dari akun", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
         }
+    }
+
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(
+                    text = "Keluar dari akun?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            text = {
+                Text(
+                    text = "Kamu perlu masuk lagi untuk melihat nilai.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                OutlinedButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogoutClick()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                ) {
+                    Text("Keluar", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showLogoutDialog = false },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Batal", fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun ProfileMenuRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    badgeText: String? = null,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(text = subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        if (badgeText != null) {
+            Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+                Text(badgeText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 4.dp))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
     }
 }

@@ -22,6 +22,7 @@ import com.example.kawansekolah.data.SeedDataHelper
 import com.example.kawansekolah.data.model.UserRole
 import com.example.kawansekolah.ui.guru.TeacherProfileScreen
 import com.example.kawansekolah.ui.login.LoginScreen
+import com.example.kawansekolah.ui.login.RoleSelectionScreen
 import com.example.kawansekolah.ui.splash.SplashScreen
 import com.example.kawansekolah.ui.theme.ThemeMode
 import com.example.kawansekolah.utils.NetworkObserver
@@ -44,8 +45,9 @@ fun MainApp(
     val networkObserver = remember(context) { NetworkObserver(context) }
     val isOnline by networkObserver.isOnline.collectAsState(initial = true)
 
-    // State Splash Screen
+    // State Screens
     var showSplash by remember { mutableStateOf(true) }
+    var selectedRoleForLogin by remember { mutableStateOf<UserRole?>(null) }
 
     // Inisialisasi Emulator & Seed Data
     LaunchedEffect(Unit) {
@@ -94,42 +96,54 @@ fun MainApp(
         Box(modifier = Modifier.weight(1f)) {
             if (showSplash) {
                 SplashScreen(
-                    onSplashFinished = {
+                    onTimeout = {
                         showSplash = false
                     }
                 )
             } else if (!isLoggedIn) {
-                LoginScreen(
-                    onLoginSuccessUser = { user ->
-                        val finalName = user.name.ifBlank { "Pengguna" }
-                        val role = user.userRole
+                if (selectedRoleForLogin == null) {
+                    RoleSelectionScreen(
+                        onRoleSelected = { role ->
+                            selectedRoleForLogin = role
+                        }
+                    )
+                } else {
+                    LoginScreen(
+                        initialRole = selectedRoleForLogin ?: UserRole.SISWA,
+                        onBackToRoleSelection = {
+                            selectedRoleForLogin = null
+                        },
+                        onLoginSuccessUser = { user ->
+                            val finalName = user.name.ifBlank { "Pengguna" }
+                            val role = user.userRole
 
-                        sessionManager.saveSession(finalName, role)
+                            sessionManager.saveSession(finalName, role)
 
-                        userDisplayName = finalName
-                        userRole = role
-                        isLoggedIn = true
+                            userDisplayName = finalName
+                            userRole = role
+                            isLoggedIn = true
 
-                        if (role == UserRole.GURU && user.teacherId.isBlank()) {
-                            needsTeacherProfile = true
-                        } else {
+                            if (role == UserRole.GURU && user.teacherId.isBlank()) {
+                                needsTeacherProfile = true
+                            } else {
+                                showLoginSuccessDialog = true
+                            }
+
+                            NotificationHelper.showSystemNotification(
+                                context = context,
+                                title = "Login Berhasil 🔔",
+                                message = "Selamat datang kembali, $finalName! Akun ${role.label} Anda terhubung."
+                            )
+                        },
+                        onDemoLoginSuccess = { demoName, demoRole ->
+                            sessionManager.saveDemoSession(demoName, demoRole)
+                            userDisplayName = demoName
+                            userRole = demoRole
+                            isLoggedIn = true
                             showLoginSuccessDialog = true
                         }
-
-                        NotificationHelper.showSystemNotification(
-                            context = context,
-                            title = "Login Berhasil 🔔",
-                            message = "Selamat datang kembali, $finalName! Akun ${role.label} Anda terhubung."
-                        )
-                    },
-                    onDemoLoginSuccess = { demoName, demoRole ->
-                        sessionManager.saveDemoSession(demoName, demoRole)
-                        userDisplayName = demoName
-                        userRole = demoRole
-                        isLoggedIn = true
-                        showLoginSuccessDialog = true
-                    }
-                )
+                    )
+                }
             } else if (needsTeacherProfile) {
                 TeacherProfileScreen(
                     onProfileSavedSuccess = {
@@ -147,6 +161,7 @@ fun MainApp(
                         sessionManager.clearSession()
                         isLoggedIn = false
                         needsTeacherProfile = false
+                        selectedRoleForLogin = null
                         userDisplayName = "Budi Santoso"
                         userRole = UserRole.SISWA
                     },

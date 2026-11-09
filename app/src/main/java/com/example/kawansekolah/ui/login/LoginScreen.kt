@@ -40,6 +40,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LoginScreen(
+    initialRole: UserRole = UserRole.SISWA,
+    onBackToRoleSelection: () -> Unit = {},
     onLoginSuccessUser: (User) -> Unit,
     onDemoLoginSuccess: (String, UserRole) -> Unit = { _, _ -> }
 ) {
@@ -50,10 +52,19 @@ fun LoginScreen(
     var isRegisterTab by remember { mutableStateOf(false) }
 
     // Form State
-    var identifierInput by remember { mutableStateOf("12345") }
+    var selectedRole by remember { mutableStateOf(initialRole) }
+    var identifierInput by remember {
+        mutableStateOf(
+            when (initialRole) {
+                UserRole.SISWA -> "12345"
+                UserRole.GURU -> "guru@kawansekolah.sch.id"
+                UserRole.WALI_KELAS -> "guru.wali@kawansekolah.sch.id"
+                UserRole.ORANG_TUA -> "ortu.ahmad@kawansekolah.local"
+            }
+        )
+    }
     var passwordInput by remember { mutableStateOf("123456") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-    var selectedRole by remember { mutableStateOf(UserRole.SISWA) }
 
     // Register State
     var regName by remember { mutableStateOf("") }
