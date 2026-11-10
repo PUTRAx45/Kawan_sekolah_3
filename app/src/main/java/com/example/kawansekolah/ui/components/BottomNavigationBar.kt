@@ -25,35 +25,35 @@ fun BottomNavigationBar(
     userRole: UserRole = UserRole.SISWA
 ) {
     val items = when (userRole) {
-        UserRole.SISWA -> listOf(
-            Triple("Beranda", Icons.Default.Home, "beranda"),
-            Triple("Pelajaran", Icons.Default.MenuBook, "pelajaran"),
-            Triple("AI", Icons.Default.AutoAwesome, "ai"),
-            Triple("Nilai", Icons.Default.Assessment, "nilai"),
-            Triple("Profil", Icons.Default.Person, "profil")
-        )
-        UserRole.GURU -> listOf(
-            Triple("Input Nilai", Icons.Default.Edit, "guru_input"),
-            Triple("Unggah CSV", Icons.Default.UploadFile, "unggah_csv"),
-            Triple("Statistik", Icons.Default.BarChart, "statistik"),
-            Triple("Insight AI", Icons.Default.AutoAwesome, "insight_page"),
-            Triple("Profil", Icons.Default.Person, "profil")
-        )
-        UserRole.WALI_KELAS -> listOf(
-            Triple("Rekap Kelas", Icons.Default.Class, "rekap_wali"),
-            Triple("Statistik", Icons.Default.BarChart, "statistik"),
-            Triple("Profil", Icons.Default.Person, "profil")
-        )
-        UserRole.ORANG_TUA -> listOf(
-            Triple("Nilai Anak", Icons.Default.Assessment, "nilai"),
-            Triple("AI", Icons.Default.AutoAwesome, "ai"),
-            Triple("Profil", Icons.Default.Person, "profil")
-        )
         UserRole.ADMIN -> listOf(
             Triple("Beranda", Icons.Default.Home, "admin_beranda"),
             Triple("Pengguna", Icons.Default.People, "admin_pengguna"),
             Triple("Akademik", Icons.Default.School, "admin_akademik"),
             Triple("Profil", Icons.Default.Person, "admin_profil")
+        )
+        UserRole.GURU -> listOf(
+            Triple("Beranda", Icons.Default.Home, "beranda"),
+            Triple("Nilai", Icons.Default.Edit, "guru_input"),
+            Triple("Insight", Icons.Default.AutoAwesome, "insight_page"),
+            Triple("Profil", Icons.Default.Person, "profil")
+        )
+        UserRole.WALI_KELAS -> listOf(
+            Triple("Beranda", Icons.Default.Home, "beranda"),
+            Triple("Kelas", Icons.Default.Class, "rekap_wali"),
+            Triple("Insight", Icons.Default.AutoAwesome, "insight_page"),
+            Triple("Profil", Icons.Default.Person, "profil")
+        )
+        UserRole.SISWA -> listOf(
+            Triple("Beranda", Icons.Default.Home, "beranda"),
+            Triple("Nilai", Icons.Default.Assessment, "nilai"),
+            Triple("AI", Icons.Default.AutoAwesome, "ai"),
+            Triple("Profil", Icons.Default.Person, "profil")
+        )
+        UserRole.ORANG_TUA -> listOf(
+            Triple("Beranda", Icons.Default.Home, "beranda"),
+            Triple("Nilai Anak", Icons.Default.Assessment, "nilai"),
+            Triple("AI", Icons.Default.AutoAwesome, "ai"),
+            Triple("Profil", Icons.Default.Person, "profil")
         )
     }
 

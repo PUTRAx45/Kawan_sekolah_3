@@ -274,28 +274,6 @@ fun LoginScreen(
                     .padding(8.dp)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            TextButton(
-                onClick = {
-                    val demoName = when (selectedRole) {
-                        UserRole.SISWA -> "Ahmad Budi"
-                        UserRole.GURU -> "Budi Santoso"
-                        UserRole.WALI_KELAS -> "Siti Aminah"
-                        UserRole.ORANG_TUA -> "Bapak Ahmad"
-                        UserRole.ADMIN -> "Arif Setiawan"
-                    }
-                    onDemoLoginSuccess(demoName, selectedRole)
-                }
-            ) {
-                Text(
-                    text = "Gunakan Demo ${selectedRole.label} Tanpa Login ->",
-                    fontSize = 12.sp,
-                    color = Color(0xFF2563EB),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
             Spacer(modifier = Modifier.height(80.dp))
         }
     }

@@ -71,10 +71,6 @@ android {
 }
 
 dependencies {
-    // Koog AI Agents
-    implementation("ai.koog:koog-agents:1.3.0")
-    implementation("ai.koog:koog-agents-additions:1.3.0-beta")
-
     implementation(platform(libs.androidx.compose.bom))
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
