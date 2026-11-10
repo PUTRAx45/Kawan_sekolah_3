@@ -314,7 +314,11 @@ fun MainScreen(
                 com.example.kawansekolah.ui.profil.UbahKataSandiScreen(onBackClick = { navController.popBackStack() })
             }
             composable("privasi_notifikasi") {
-                com.example.kawansekolah.ui.profil.PrivasiNotifikasiScreen(onBackClick = { navController.popBackStack() })
+                com.example.kawansekolah.ui.profil.PrivasiNotifikasiScreen(
+                    currentThemeMode = currentThemeMode,
+                    onThemeModeChange = onThemeModeChange,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
             composable("perangkat_sesi") {
                 com.example.kawansekolah.ui.profil.PerangkatSesiScreen(onBackClick = { navController.popBackStack() })
