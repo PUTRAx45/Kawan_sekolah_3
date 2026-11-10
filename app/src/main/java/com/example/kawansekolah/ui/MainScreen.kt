@@ -30,7 +30,6 @@ import com.example.kawansekolah.ui.nilai.NilaiScreen
 import com.example.kawansekolah.ui.pelajaran.PelajaranScreen
 import com.example.kawansekolah.ui.pelajaran.components.SubjectDetailBottomSheet
 import com.example.kawansekolah.ui.profil.ProfilScreen
-import com.example.kawansekolah.ui.tampilan.TampilanScreen
 import com.example.kawansekolah.ui.theme.ThemeMode
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -319,15 +318,6 @@ fun MainScreen(
             }
             composable("perangkat_sesi") {
                 com.example.kawansekolah.ui.profil.PerangkatSesiScreen(onBackClick = { navController.popBackStack() })
-            }
-            composable("tampilan") {
-                TampilanScreen(
-                    userName = userName,
-                    unreadCount = unreadCount,
-                    currentThemeMode = currentThemeMode,
-                    onNotificationClick = handleNotificationClick,
-                    onThemeModeChange = onThemeModeChange
-                )
             }
         }
     }
