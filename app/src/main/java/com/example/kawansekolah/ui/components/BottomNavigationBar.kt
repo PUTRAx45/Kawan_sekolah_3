@@ -49,6 +49,12 @@ fun BottomNavigationBar(
             Triple("AI", Icons.Default.AutoAwesome, "ai"),
             Triple("Profil", Icons.Default.Person, "profil")
         )
+        UserRole.ADMIN -> listOf(
+            Triple("Beranda", Icons.Default.Home, "admin_beranda"),
+            Triple("Pengguna", Icons.Default.People, "admin_pengguna"),
+            Triple("Akademik", Icons.Default.School, "admin_akademik"),
+            Triple("Profil", Icons.Default.Person, "admin_profil")
+        )
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

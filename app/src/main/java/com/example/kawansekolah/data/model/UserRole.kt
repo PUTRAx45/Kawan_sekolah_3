@@ -4,5 +4,6 @@ enum class UserRole(val label: String, val subtitle: String) {
     SISWA("Siswa", "Murid / Pelajar"),
     GURU("Guru Mapel", "Pengajar Mata Pelajaran"),
     WALI_KELAS("Wali Kelas", "Wali Murid Kelas"),
-    ORANG_TUA("Orang Tua", "Orang Tua / Wali Murid")
+    ORANG_TUA("Orang Tua", "Orang Tua / Wali Murid"),
+    ADMIN("Admin Sekolah", "Pengelola Akun & Data Sekolah")
 }

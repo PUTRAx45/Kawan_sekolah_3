@@ -105,6 +105,9 @@ fun MainApp(
                     RoleSelectionScreen(
                         onRoleSelected = { role ->
                             selectedRoleForLogin = role
+                        },
+                        onAdminClick = {
+                            selectedRoleForLogin = UserRole.ADMIN
                         }
                     )
                 } else {

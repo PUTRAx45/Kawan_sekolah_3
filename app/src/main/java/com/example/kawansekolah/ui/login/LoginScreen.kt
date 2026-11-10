@@ -54,6 +54,7 @@ fun LoginScreen(
                 UserRole.GURU -> "guru@kawansekolah.sch.id"
                 UserRole.WALI_KELAS -> "guru.wali@kawansekolah.sch.id"
                 UserRole.ORANG_TUA -> "ortu.ahmad@kawansekolah.local"
+                UserRole.ADMIN -> "admin@sekolah.sch.id"
             }
         )
     }
@@ -66,6 +67,7 @@ fun LoginScreen(
         UserRole.WALI_KELAS -> "Wali kelas"
         UserRole.SISWA -> "Siswa"
         UserRole.ORANG_TUA -> "Orang tua"
+        UserRole.ADMIN -> "Admin sekolah"
     }
 
     val fieldLabel = when (selectedRole) {
@@ -83,6 +85,7 @@ fun LoginScreen(
                     UserRole.GURU -> "GURU"
                     UserRole.WALI_KELAS -> "WALI_KELAS"
                     UserRole.ORANG_TUA -> "ORANG_TUA"
+                    UserRole.ADMIN -> "ADMIN"
                 }
                 val finalUser = user.copy(
                     role = roleName,
@@ -280,6 +283,7 @@ fun LoginScreen(
                         UserRole.GURU -> "Budi Santoso"
                         UserRole.WALI_KELAS -> "Siti Aminah"
                         UserRole.ORANG_TUA -> "Bapak Ahmad"
+                        UserRole.ADMIN -> "Arif Setiawan"
                     }
                     onDemoLoginSuccess(demoName, selectedRole)
                 }

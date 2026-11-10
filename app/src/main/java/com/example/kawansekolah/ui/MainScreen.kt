@@ -188,6 +188,7 @@ fun MainScreen(
         UserRole.WALI_KELAS -> "rekap_wali"
         UserRole.ORANG_TUA -> "nilai"
         UserRole.SISWA -> "beranda"
+        UserRole.ADMIN -> "admin_beranda"
     }
 
     val roleString = when (userRole) {
@@ -195,6 +196,7 @@ fun MainScreen(
         UserRole.WALI_KELAS -> "WALI_KELAS"
         UserRole.SISWA -> "SISWA"
         UserRole.ORANG_TUA -> "ORANG_TUA"
+        UserRole.ADMIN -> "ADMIN"
     }
 
     val activeUserId = Firebase.auth.currentUser?.uid ?: "teacher_user"
@@ -322,6 +324,53 @@ fun MainScreen(
             }
             composable("perangkat_sesi") {
                 com.example.kawansekolah.ui.profil.PerangkatSesiScreen(onBackClick = { navController.popBackStack() })
+            }
+            // ADMIN ROUTES (Image 3 Mockups)
+            composable("admin_beranda") {
+                com.example.kawansekolah.ui.admin.AdminBerandaScreen(
+                    userName = userName,
+                    unreadCount = unreadCount,
+                    onNotificationClick = handleNotificationClick,
+                    onNavigateToPengguna = { navController.navigate("admin_pengguna") },
+                    onNavigateToAkademik = { navController.navigate("admin_pengguna") }
+                )
+            }
+            composable("admin_pengguna") {
+                com.example.kawansekolah.ui.admin.AdminPenggunaScreen(
+                    onNavigateToDetail = { navController.navigate("admin_detail_akun") },
+                    onNavigateToDaftarAccount = { navController.navigate("admin_daftar_akun") }
+                )
+            }
+            composable("admin_akademik") {
+                com.example.kawansekolah.ui.admin.AdminPenggunaScreen(
+                    onNavigateToDetail = { navController.navigate("admin_detail_akun") },
+                    onNavigateToDaftarAccount = { navController.navigate("admin_daftar_akun") }
+                )
+            }
+            composable("admin_profil") {
+                com.example.kawansekolah.ui.admin.AdminProfilScreen(
+                    adminName = userName,
+                    onLogoutClick = onLogout,
+                    onUbahKataSandiClick = { navController.navigate("ubah_kata_sandi") },
+                    onPrivasiNotifikasiClick = { navController.navigate("privasi_notifikasi") },
+                    onPerangkatSesiClick = { navController.navigate("perangkat_sesi") }
+                )
+            }
+            composable("admin_detail_akun") {
+                com.example.kawansekolah.ui.admin.AdminDetailAkunScreen(onBackClick = { navController.popBackStack() })
+            }
+            composable("admin_daftar_akun") {
+                com.example.kawansekolah.ui.admin.AdminDaftarAkunScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onImportCsvClick = { navController.navigate("admin_impor_csv") },
+                    onAccountCreated = { navController.popBackStack() }
+                )
+            }
+            composable("admin_impor_csv") {
+                com.example.kawansekolah.ui.admin.AdminImporCsvScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onValidateSuccess = { navController.popBackStack() }
+                )
             }
         }
     }
