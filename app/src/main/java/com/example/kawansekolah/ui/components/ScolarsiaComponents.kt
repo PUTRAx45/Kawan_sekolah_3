@@ -25,8 +25,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kawansekolah.ui.theme.*
 
-// 1. Primary Blue Button (#2563EB)
+// 1. Primary Button (#1C64F2, 12.dp, White Bold)
 @Composable
 fun PrimaryButton(
     text: String,
@@ -42,7 +43,11 @@ fun PrimaryButton(
             .fillMaxWidth()
             .height(50.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = PrimaryBlue,
+            disabledContainerColor = DisabledGray,
+            disabledContentColor = Color.White
+        ),
         enabled = enabled && !isLoading
     ) {
         if (isLoading) {
@@ -66,9 +71,9 @@ fun PrimaryButton(
     }
 }
 
-// 2. Outline Button
+// 2. Secondary Button (Border #1C64F2, 12.dp, #1C64F2 SemiBold)
 @Composable
-fun ScolarsiaOutlineButton(
+fun SecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -82,22 +87,38 @@ fun ScolarsiaOutlineButton(
             .height(50.dp),
         shape = RoundedCornerShape(12.dp),
         enabled = enabled,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, PrimaryBlue),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = PrimaryBlue
+        )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = PrimaryBlue)
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
         }
     }
 }
 
-// 3. Danger Button
+// Backward-compatible alias for ScolarsiaOutlineButton
+@Composable
+fun ScolarsiaOutlineButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector? = null
+) {
+    SecondaryButton(text = text, onClick = onClick, modifier = modifier, enabled = enabled, icon = icon)
+}
+
+// 3. Danger Button (White, Border #FCA5A5, #E02424 SemiBold)
 @Composable
 fun DangerButton(
     text: String,
@@ -110,26 +131,90 @@ fun DangerButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp)
-            .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+            .height(50.dp),
         shape = RoundedCornerShape(12.dp),
         enabled = enabled,
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+        border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.White,
+            contentColor = DangerRed
+        )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = DangerRed)
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DangerRed)
         }
     }
 }
 
-// 4. Labeled TextField
+// 4. Disabled Button (#CAD5E2 / Muted Blue, Disabled state, White Text)
+@Composable
+fun DisabledButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null
+) {
+    Button(
+        onClick = {},
+        enabled = false,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            disabledContainerColor = DisabledGray,
+            disabledContentColor = Color.White
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (icon != null) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        }
+    }
+}
+
+// 5. Filter Chip (Active: #EBF2FE / #1C64F2, Inactive: #F3F4F6 / #6B7280, 20.dp Capsule)
+@Composable
+fun ScolarsiaFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        selected = selected,
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) PrimarySoftBlue else BackgroundMuted,
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (selected) PrimaryBlue else TextMuted
+            )
+        }
+    }
+}
+
+// 6. Labeled TextField
 @Composable
 fun LabeledTextField(
     value: String,
@@ -168,13 +253,13 @@ fun LabeledTextField(
     )
 }
 
-// 5. White Rounded Card
+// 7. White Rounded Card
 @Composable
 fun ScolarsiaCard(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(16.dp),
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-    borderColor: Color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    borderColor: Color = CardBorderStroke,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -190,15 +275,15 @@ fun ScolarsiaCard(
     }
 }
 
-// 6. Status Badge
+// 8. Status Badge
 enum class StatusBadgeType(val label: String, val containerColor: Color, val textColor: Color) {
-    LENGKAP("Lengkap", Color(0xFFDCFCE7), Color(0xFF15803D)),
-    BELUM_LENGKAP("Belum lengkap", Color(0xFFF1F5F9), Color(0xFF64748B)),
-    AKTIF("Aktif", Color(0xFFDCFCE7), Color(0xFF166534)),
-    PERLU_DICEK("PERLU DICEK", Color(0xFFFEF3C7), Color(0xFFB45309)),
-    KUAT("KUAT", Color(0xFFDCFCE7), Color(0xFF15803D)),
-    LATIHAN("LATIHAN", Color(0xFFFEF3C7), Color(0xFFB45309)),
-    RESIKO("RESIKO", Color(0xFFFEE2E2), Color(0xFFB91C1C))
+    LENGKAP("Lengkap", SuccessGreenBg, SuccessGreen),
+    BELUM_LENGKAP("Belum lengkap", BackgroundMuted, TextMuted),
+    AKTIF("Aktif", SuccessGreenBg, SuccessGreen),
+    PERLU_DICEK("PERLU DICEK", WarningYellowBg, WarningYellow),
+    KUAT("KUAT", SuccessGreenBg, SuccessGreen),
+    LATIHAN("LATIHAN", WarningYellowBg, WarningYellow),
+    RESIKO("RESIKO", DangerRedBg, DangerRed)
 }
 
 @Composable
@@ -222,7 +307,7 @@ fun StatusBadge(
     }
 }
 
-// 7. Colored Progress Bar (Green / Yellow / Red)
+// 9. Colored Progress Bar (Green / Yellow / Red)
 @Composable
 fun ColoredProgressBar(
     score: Double,
@@ -230,9 +315,9 @@ fun ColoredProgressBar(
 ) {
     val progress = (score / 100.0).coerceIn(0.0, 1.0).toFloat()
     val barColor = when {
-        score >= 80 -> Color(0xFF22C55E) // Green
-        score >= 70 -> Color(0xFFEAB308) // Yellow/Amber
-        else -> Color(0xFFEF4444) // Red
+        score >= 80 -> SuccessGreen
+        score >= 70 -> WarningYellow
+        else -> DangerRed
     }
 
     Row(
@@ -258,7 +343,7 @@ fun ColoredProgressBar(
     }
 }
 
-// 8. Info Card (Light Blue Card)
+// 10. Info Card (Light Blue Card)
 @Composable
 fun InfoCard(
     title: String,
@@ -268,18 +353,18 @@ fun InfoCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFEFF6FF),
-        border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.3f))
+        color = PrimarySoftBlue,
+        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1D4ED8))
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryBlue)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(description, fontSize = 11.sp, color = Color(0xFF2563EB))
+            Text(description, fontSize = 11.sp, color = PrimaryBlue)
         }
     }
 }
 
-// 9. Warning Card (Cream Card)
+// 11. Warning Card (Cream Card)
 @Composable
 fun WarningCard(
     title: String,
@@ -289,8 +374,8 @@ fun WarningCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFFEF3C7),
-        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
+        color = WarningYellowBg,
+        border = BorderStroke(1.dp, WarningYellowStroke)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -298,16 +383,16 @@ fun WarningCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = WarningYellow)
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(description, fontSize = 11.sp, color = Color(0xFFB45309))
+                Text(description, fontSize = 11.sp, color = WarningYellow)
             }
             StatusBadge(type = StatusBadgeType.PERLU_DICEK)
         }
     }
 }
 
-// 10. Dark Profile Header Card
+// 12. Dark Profile Header Card
 @Composable
 fun DarkProfileHeaderCard(
     title: String,
@@ -319,7 +404,7 @@ fun DarkProfileHeaderCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = NavyContainer)
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
@@ -329,14 +414,14 @@ fun DarkProfileHeaderCard(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(PrimaryBlue),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = initials,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = ColorWhite
                 )
             }
 
@@ -347,25 +432,25 @@ fun DarkProfileHeaderCard(
                     text = title,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = ColorWhite
                 )
                 Text(
                     text = subtitle,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                    color = ColorWhite.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
                 Text(
                     text = email,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    color = ColorWhite.copy(alpha = 0.8f)
                 )
             }
         }
     }
 }
 
-// 11. Empty State View
+// 13. Empty State View
 @Composable
 fun EmptyStateView(
     title: String = "Belum ada data",
@@ -386,13 +471,13 @@ fun EmptyStateView(
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(BackgroundMuted),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = TextMuted,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -403,7 +488,7 @@ fun EmptyStateView(
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = DarkText,
             textAlign = TextAlign.Center
         )
 
@@ -412,7 +497,7 @@ fun EmptyStateView(
         Text(
             text = description,
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = TextMuted,
             textAlign = TextAlign.Center,
             lineHeight = 16.sp
         )
@@ -422,9 +507,9 @@ fun EmptyStateView(
             Button(
                 onClick = onActionClick,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text(actionButtonText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(actionButtonText, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ColorWhite)
             }
         }
     }
