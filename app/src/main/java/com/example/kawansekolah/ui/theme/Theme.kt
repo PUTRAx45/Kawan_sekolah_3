@@ -17,32 +17,48 @@ enum class ThemeMode {
     DARK
 }
 
-private val DarkColorScheme = darkColorScheme(
-    primary = ScolarsiaBlueLight,
-    onPrimary = Color.White,
-    primaryContainer = DarkPrimaryContainer,
-    onPrimaryContainer = DarkOnPrimaryContainer,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceVariant,
-    outline = Color(0xFF475569)
+private val LightColorScheme = lightColorScheme(
+    primary = PrimaryBlue,
+    onPrimary = ColorWhite,
+    primaryContainer = PrimarySoftBlue,
+    onPrimaryContainer = PrimaryBlue,
+    secondary = PrimaryBlue,
+    onSecondary = ColorWhite,
+    tertiary = NavyContainer,
+    onTertiary = ColorWhite,
+    background = BackgroundMuted,
+    onBackground = DarkText,
+    surface = ColorWhite,
+    onSurface = DarkText,
+    surfaceVariant = BackgroundMuted,
+    onSurfaceVariant = TextMuted,
+    outline = CardBorderStroke,
+    error = DangerRed,
+    onError = ColorWhite,
+    errorContainer = DangerRedBg,
+    onErrorContainer = DangerRed
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = ScolarsiaBlue,
-    onPrimary = Color.White,
-    primaryContainer = LightPrimaryContainer,
-    onPrimaryContainer = LightOnPrimaryContainer,
-    background = LightBackground,
-    onBackground = LightOnBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = LightOnSurfaceVariant,
-    outline = Color(0xFFCBD5E1)
+private val DarkColorScheme = darkColorScheme(
+    primary = PrimaryBlue,
+    onPrimary = ColorWhite,
+    primaryContainer = NavyContainer,
+    onPrimaryContainer = ColorWhite,
+    secondary = PrimaryBlue,
+    onSecondary = ColorWhite,
+    tertiary = PrimarySoftBlue,
+    onTertiary = DarkText,
+    background = Color(0xFF0B0F19),
+    onBackground = ColorWhite,
+    surface = Color(0xFF111827),
+    onSurface = ColorWhite,
+    surfaceVariant = Color(0xFF1F2937),
+    onSurfaceVariant = Color(0xFF9CA3AF),
+    outline = Color(0xFF374151),
+    error = DangerRed,
+    onError = ColorWhite,
+    errorContainer = Color(0xFF7F1D1D),
+    onErrorContainer = Color(0xFFFEE2E2)
 )
 
 @Composable
