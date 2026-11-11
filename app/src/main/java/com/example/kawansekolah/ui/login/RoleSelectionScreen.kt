@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.ui.theme.*
 
 @Composable
 fun RoleSelectionScreen(
@@ -32,7 +33,7 @@ fun RoleSelectionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(BackgroundMuted)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -50,7 +51,7 @@ fun RoleSelectionScreen(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(Color(0xFF2563EB)),
+                    .background(PrimaryBlue),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -66,7 +67,7 @@ fun RoleSelectionScreen(
                 text = "Scolarsia",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+                color = DarkText
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -75,13 +76,13 @@ fun RoleSelectionScreen(
                 text = "Masuk sebagai siapa?",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+                color = DarkText
             )
 
             Text(
                 text = "Pilih peranmu untuk melanjutkan",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = TextMuted,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -105,8 +106,8 @@ fun RoleSelectionScreen(
                 title = "Wali kelas",
                 subtitle = "Rekap nilai semua mapel di kelas wali",
                 badgeLetter = "W",
-                badgeColor = Color(0xFFEFF6FF),
-                badgeTextColor = Color(0xFF2563EB),
+                badgeColor = PrimarySoftBlue,
+                badgeTextColor = PrimaryBlue,
                 onClick = { onRoleSelected(UserRole.WALI_KELAS) }
             )
 
@@ -117,8 +118,8 @@ fun RoleSelectionScreen(
                 title = "Siswa",
                 subtitle = "Lihat nilai, insight AI, chat AI",
                 badgeLetter = "S",
-                badgeColor = Color(0xFFF0FDF4),
-                badgeTextColor = Color(0xFF16A34A),
+                badgeColor = SuccessGreenBg,
+                badgeTextColor = SuccessGreen,
                 onClick = { onRoleSelected(UserRole.SISWA) }
             )
 
@@ -141,7 +142,7 @@ fun RoleSelectionScreen(
                 text = "Admin sekolah? Daftarkan sekolah",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2563EB),
+                color = PrimaryBlue,
                 modifier = Modifier
                     .clickable { onAdminClick() }
                     .padding(8.dp)
@@ -166,8 +167,9 @@ private fun RoleCardItem(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+        color = ColorWhite,
+        border = BorderStroke(1.dp, CardBorderStroke),
+        shadowElevation = 2.dp
     ) {
         Row(
             modifier = Modifier
@@ -197,12 +199,12 @@ private fun RoleCardItem(
                     text = title,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = DarkText
                 )
                 Text(
                     text = subtitle,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = TextMuted,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -210,7 +212,7 @@ private fun RoleCardItem(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = TextMuted,
                 modifier = Modifier.size(20.dp)
             )
         }
