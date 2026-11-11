@@ -1,11 +1,11 @@
 package com.example.kawansekolah.ui.splash
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,8 +26,24 @@ fun SplashScreen(
     onTimeout: () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        delay(1800L)
+        delay(2200L)
         onTimeout()
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "splash_loading")
+    val dotCount = 4
+
+    val dotScales = List(dotCount) { index ->
+        infiniteTransition.animateFloat(
+            initialValue = 0.6f,
+            targetValue = 1.35f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+                initialStartOffset = StartOffset(index * 130)
+            ),
+            label = "dot_scale_$index"
+        )
     }
 
     Box(
@@ -48,21 +64,22 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Larger Logo Box Badge
             Box(
                 modifier = Modifier
-                    .size(96.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .size(112.dp)
+                    .clip(RoundedCornerShape(28.dp))
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.logo_scolarsia),
                     contentDescription = "Logo Scolarsia",
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier.size(76.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Scolarsia",
@@ -78,12 +95,25 @@ fun SplashScreen(
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)))
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.5f)))
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.5f)))
+            // 4 Animated Pulse Dots (Besar - Kecil - Besar)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                dotScales.forEach { scale ->
+                    val curScale = scale.value
+                    val dotSize = (9 * curScale).dp
+                    val dotOpacity = (0.35f + 0.65f * (curScale - 0.6f) / 0.75f).coerceIn(0.35f, 1.0f)
+
+                    Box(
+                        modifier = Modifier
+                            .size(dotSize)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = dotOpacity))
+                    )
+                }
             }
         }
 
