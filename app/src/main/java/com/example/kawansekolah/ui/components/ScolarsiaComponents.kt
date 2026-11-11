@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kawansekolah.ui.theme.*
@@ -214,7 +216,135 @@ fun ScolarsiaFilterChip(
     }
 }
 
-// 6. Labeled TextField
+// 6. Status Badges (Pill Capsule, Padding 10.dp horizontal, 4.dp vertical)
+enum class StatusBadgeType(val label: String, val containerColor: Color, val textColor: Color) {
+    LENGKAP("Lengkap", SuccessGreenBg, SuccessGreen),
+    PERLU_LATIHAN("Perlu latihan", WarningYellowBg, WarningYellow),
+    PERLU_PERHATIAN("Perlu perhatian", DangerRedBg, DangerRed),
+    INFO("Info", PrimarySoftBlue, PrimaryBlue),
+    BELUM_LENGKAP("Belum lengkap", BackgroundMuted, TextMuted),
+    AKTIF("Aktif", SuccessGreenBg, SuccessGreen),
+    PERLU_DICEK("PERLU DICEK", WarningYellowBg, WarningYellow),
+    KUAT("KUAT", SuccessGreenBg, SuccessGreen),
+    LATIHAN("LATIHAN", WarningYellowBg, WarningYellow),
+    RESIKO("RESIKO", DangerRedBg, DangerRed)
+}
+
+@Composable
+fun StatusBadge(
+    type: StatusBadgeType,
+    modifier: Modifier = Modifier,
+    customText: String? = null
+) {
+    Surface(
+        shape = CircleShape,
+        color = type.containerColor,
+        modifier = modifier
+    ) {
+        Text(
+            text = customText ?: type.label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = type.textColor,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
+    }
+}
+
+// 7. Avatar (Circle with Initials, 3 Variant Colors)
+enum class AvatarVariant(val containerColor: Color, val textColor: Color) {
+    SOLID_BLUE(PrimaryBlue, ColorWhite),
+    SOFT_BLUE(PrimarySoftBlue, PrimaryBlue),
+    DARK_NAVY(NavyContainer, ColorWhite)
+}
+
+@Composable
+fun ScolarsiaAvatar(
+    initials: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    variant: AvatarVariant = AvatarVariant.SOLID_BLUE
+) {
+    val cleanInitials = if (initials.isBlank()) "S" else initials.trim().take(2).uppercase()
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(variant.containerColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = cleanInitials,
+            fontSize = (size.value * 0.38).sp,
+            fontWeight = FontWeight.Bold,
+            color = variant.textColor
+        )
+    }
+}
+
+// 8. Chat Input Field (Pill shape, #E5E7EB border, #1C64F2 circle button with ArrowUpward)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSendClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Tulis pertanyaan tentang nilai...",
+    enabled: Boolean = true
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, CardBorderStroke)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = { Text(placeholder, fontSize = 13.sp, color = TextMuted) },
+                singleLine = true,
+                enabled = enabled,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(if (value.isNotBlank() && enabled) PrimaryBlue else DisabledGray)
+                    .clickable(enabled = value.isNotBlank() && enabled) { onSendClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowUpward,
+                    contentDescription = "Kirim",
+                    tint = ColorWhite,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+// 9. Labeled TextField
 @Composable
 fun LabeledTextField(
     value: String,
@@ -253,7 +383,7 @@ fun LabeledTextField(
     )
 }
 
-// 7. White Rounded Card
+// 10. White Rounded Card
 @Composable
 fun ScolarsiaCard(
     modifier: Modifier = Modifier,
@@ -275,39 +405,7 @@ fun ScolarsiaCard(
     }
 }
 
-// 8. Status Badge
-enum class StatusBadgeType(val label: String, val containerColor: Color, val textColor: Color) {
-    LENGKAP("Lengkap", SuccessGreenBg, SuccessGreen),
-    BELUM_LENGKAP("Belum lengkap", BackgroundMuted, TextMuted),
-    AKTIF("Aktif", SuccessGreenBg, SuccessGreen),
-    PERLU_DICEK("PERLU DICEK", WarningYellowBg, WarningYellow),
-    KUAT("KUAT", SuccessGreenBg, SuccessGreen),
-    LATIHAN("LATIHAN", WarningYellowBg, WarningYellow),
-    RESIKO("RESIKO", DangerRedBg, DangerRed)
-}
-
-@Composable
-fun StatusBadge(
-    type: StatusBadgeType,
-    modifier: Modifier = Modifier,
-    customText: String? = null
-) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = type.containerColor,
-        modifier = modifier
-    ) {
-        Text(
-            text = customText ?: type.label,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = type.textColor,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-        )
-    }
-}
-
-// 9. Colored Progress Bar (Green / Yellow / Red)
+// 11. Colored Progress Bar (Green / Yellow / Red)
 @Composable
 fun ColoredProgressBar(
     score: Double,
@@ -343,7 +441,7 @@ fun ColoredProgressBar(
     }
 }
 
-// 10. Info Card (Light Blue Card)
+// 12. Info Card (Light Blue Card)
 @Composable
 fun InfoCard(
     title: String,
@@ -364,7 +462,7 @@ fun InfoCard(
     }
 }
 
-// 11. Warning Card (Cream Card)
+// 13. Warning Card (Cream Card)
 @Composable
 fun WarningCard(
     title: String,
@@ -392,7 +490,7 @@ fun WarningCard(
     }
 }
 
-// 12. Dark Profile Header Card
+// 14. Dark Profile Header Card
 @Composable
 fun DarkProfileHeaderCard(
     title: String,
@@ -410,20 +508,11 @@ fun DarkProfileHeaderCard(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryBlue),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = initials,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorWhite
-                )
-            }
+            ScolarsiaAvatar(
+                initials = initials,
+                size = 56.dp,
+                variant = AvatarVariant.SOLID_BLUE
+            )
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -450,7 +539,7 @@ fun DarkProfileHeaderCard(
     }
 }
 
-// 13. Empty State View
+// 15. Empty State View
 @Composable
 fun EmptyStateView(
     title: String = "Belum ada data",
