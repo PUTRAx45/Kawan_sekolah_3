@@ -92,7 +92,7 @@ fun RoleSelectionScreen(
             RoleCardItem(
                 role = UserRole.GURU,
                 title = "Guru",
-                subtitle = "Input nilai, unggah CSV, insight kelas",
+                subtitle = "Kelola penilaian mata pelajaran",
                 badgeLetter = "G",
                 badgeColor = Color(0xFFE0F2FE),
                 badgeTextColor = Color(0xFF0284C7),
@@ -104,7 +104,7 @@ fun RoleSelectionScreen(
             RoleCardItem(
                 role = UserRole.WALI_KELAS,
                 title = "Wali kelas",
-                subtitle = "Rekap nilai semua mapel di kelas wali",
+                subtitle = "Rekapitulasi nilai kelas wali",
                 badgeLetter = "W",
                 badgeColor = PrimarySoftBlue,
                 badgeTextColor = PrimaryBlue,
@@ -116,7 +116,7 @@ fun RoleSelectionScreen(
             RoleCardItem(
                 role = UserRole.SISWA,
                 title = "Siswa",
-                subtitle = "Lihat nilai, insight AI, chat AI",
+                subtitle = "Lihat nilai & rekomendasi belajar",
                 badgeLetter = "S",
                 badgeColor = SuccessGreenBg,
                 badgeTextColor = SuccessGreen,
@@ -128,7 +128,7 @@ fun RoleSelectionScreen(
             RoleCardItem(
                 role = UserRole.ORANG_TUA,
                 title = "Orang tua",
-                subtitle = "Pantau perkembangan nilai anak",
+                subtitle = "Pantau hasil belajar anak",
                 badgeLetter = "O",
                 badgeColor = Color(0xFFFAF5FF),
                 badgeTextColor = Color(0xFF9333EA),
