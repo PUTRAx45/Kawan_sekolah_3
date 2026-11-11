@@ -1,5 +1,6 @@
 package com.example.kawansekolah.ui.splash
 
+import android.os.Build
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,25 +27,27 @@ fun SplashScreen(
     onTimeout: () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        delay(2200L)
+        delay(2500L)
         onTimeout()
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "splash_loading")
+    val infiniteTransition = rememberInfiniteTransition(label = "splash_loading_slowmo")
     val dotCount = 4
 
     val dotScales = List(dotCount) { index ->
         infiniteTransition.animateFloat(
-            initialValue = 0.6f,
+            initialValue = 0.55f,
             targetValue = 1.35f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+                animation = tween(durationMillis = 750, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse,
-                initialStartOffset = StartOffset(index * 130)
+                initialStartOffset = StartOffset(index * 180)
             ),
             label = "dot_scale_$index"
         )
     }
+
+    val androidVersionName = try { Build.VERSION.RELEASE ?: "14" } catch (_: Exception) { "14" }
 
     Box(
         modifier = Modifier
@@ -67,15 +70,15 @@ fun SplashScreen(
             // Larger Logo Box Badge
             Box(
                 modifier = Modifier
-                    .size(112.dp)
-                    .clip(RoundedCornerShape(28.dp))
+                    .size(128.dp)
+                    .clip(RoundedCornerShape(32.dp))
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.logo_scolarsia),
                     contentDescription = "Logo Scolarsia",
-                    modifier = Modifier.size(76.dp)
+                    modifier = Modifier.size(88.dp)
                 )
             }
 
@@ -97,15 +100,15 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            // 4 Animated Pulse Dots (Besar - Kecil - Besar)
+            // 4 Slowmo Pulse Loading Dots
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 dotScales.forEach { scale ->
                     val curScale = scale.value
-                    val dotSize = (9 * curScale).dp
-                    val dotOpacity = (0.35f + 0.65f * (curScale - 0.6f) / 0.75f).coerceIn(0.35f, 1.0f)
+                    val dotSize = (9.5f * curScale).dp
+                    val dotOpacity = (0.35f + 0.65f * (curScale - 0.55f) / 0.8f).coerceIn(0.35f, 1.0f)
 
                     Box(
                         modifier = Modifier
@@ -118,9 +121,9 @@ fun SplashScreen(
         }
 
         Text(
-            text = "Versi 1.0 • Android",
+            text = "Versi 2.0.3 • Android $androidVersionName",
             fontSize = 11.sp,
-            color = Color.White.copy(alpha = 0.7f),
+            color = Color.White.copy(alpha = 0.75f),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 32.dp)
