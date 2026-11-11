@@ -92,7 +92,7 @@ fun SplashScreen(
             )
 
             Text(
-                text = "Nilai jelas, belajar terarah",
+                text = "Sinergi Sekolah, Panduan Masa Depan",
                 fontSize = 14.sp,
                 color = Color.White.copy(alpha = 0.85f),
                 modifier = Modifier.padding(top = 4.dp)
