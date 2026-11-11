@@ -49,15 +49,22 @@ class AcademicViewModel : ViewModel() {
     val uiState: StateFlow<AcademicUiState> get() = _uiState
 
     init {
-        val authUid = Firebase.auth.currentUser?.uid ?: "siswa_12345"
-        loadAllAcademicData(authUid)
+        val authUid = Firebase.auth.currentUser?.uid ?: ""
+        if (authUid.isNotBlank()) {
+            loadAllAcademicData(authUid)
+        }
     }
 
-    fun loadAllAcademicData(studentId: String = "siswa_12345") {
+    fun loadAllAcademicData(studentId: String = "") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            val authUid = Firebase.auth.currentUser?.uid
-            val targetStudentId = if (studentId == "siswa_12345" && !authUid.isNullOrBlank()) authUid else studentId
+            val authUid = Firebase.auth.currentUser?.uid ?: ""
+            val targetStudentId = if (studentId.isBlank()) authUid else studentId
+
+            if (targetStudentId.isBlank()) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                return@launch
+            }
 
             try {
                 // Timeout 8 detik per pengambilan data
