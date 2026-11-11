@@ -31,6 +31,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.User
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.ui.theme.PrimaryBlue
+import com.example.kawansekolah.ui.theme.TextMuted
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -53,7 +55,17 @@ fun LoginScreen(
 
     var selectedRole by remember { mutableStateOf(initialRole) }
     var identifierInput by remember { mutableStateOf("") }
-    var passwordInput by remember { mutableStateOf("") }
+    var passwordInput by remember {
+        mutableStateOf(
+            when (initialRole) {
+                UserRole.GURU -> "1g2u3r4u"
+                UserRole.WALI_KELAS -> "1w2a3l4i"
+                UserRole.SISWA -> "1s2i3s4w"
+                UserRole.ORANG_TUA -> "1o2r3a4n"
+                UserRole.ADMIN -> "1a2d3m4i"
+            }
+        )
+    }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -72,9 +84,17 @@ fun LoginScreen(
     }
 
     val emailPlaceholder = when (selectedRole) {
+        UserRole.GURU -> "guru@sekolah.sch.id (diberikan admin)"
+        UserRole.WALI_KELAS -> "walikelas@sekolah.sch.id (diberikan admin)"
+        UserRole.SISWA -> "nisn@sekolah.sch.id (diberikan admin)"
+        UserRole.ORANG_TUA -> "orangtua@sekolah.sch.id (diberikan admin)"
+        UserRole.ADMIN -> "admin@sekolah.sch.id (diberikan admin)"
+    }
+
+    val defaultFallbackEmail = when (selectedRole) {
         UserRole.GURU -> "guru@scolarsia.sch.id"
         UserRole.WALI_KELAS -> "walikelas@scolarsia.sch.id"
-        UserRole.SISWA -> "siswa@scolarsia.sch.id / 09231"
+        UserRole.SISWA -> "siswa@scolarsia.sch.id"
         UserRole.ORANG_TUA -> "orangtua@scolarsia.sch.id"
         UserRole.ADMIN -> "admin@scolarsia.sch.id"
     }
@@ -134,7 +154,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(Color(0xFF2563EB)),
+                    .background(PrimaryBlue),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -163,7 +183,7 @@ fun LoginScreen(
                     text = roleTitle,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2563EB),
+                    color = PrimaryBlue,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }
@@ -191,7 +211,12 @@ fun LoginScreen(
                 value = identifierInput,
                 onValueChange = { identifierInput = it },
                 label = { Text(fieldLabel) },
-                placeholder = { Text(emailPlaceholder, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                placeholder = { Text(emailPlaceholder, fontSize = 12.sp, color = TextMuted) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryBlue,
+                    focusedLabelColor = PrimaryBlue,
+                    cursorColor = PrimaryBlue
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
@@ -210,7 +235,12 @@ fun LoginScreen(
                     }
                 },
                 label = { Text("Kata sandi") },
-                placeholder = { Text(passwordPlaceholder, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                placeholder = { Text(passwordPlaceholder, fontSize = 12.sp, color = TextMuted) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryBlue,
+                    focusedLabelColor = PrimaryBlue,
+                    cursorColor = PrimaryBlue
+                ),
                 trailingIcon = {
                     val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
@@ -250,7 +280,7 @@ fun LoginScreen(
             Button(
                 onClick = {
                     errorMessage = ""
-                    val inputEmail = identifierInput.ifBlank { emailPlaceholder.substringBefore(" ") }
+                    val inputEmail = identifierInput.ifBlank { defaultFallbackEmail }
                     val inputPass = passwordInput.ifBlank { passwordPlaceholder }
                     authViewModel.login(inputEmail, inputPass)
                 },
@@ -258,7 +288,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 enabled = authUiState !is AuthUiState.Loading
             ) {
                 if (authUiState is AuthUiState.Loading) {
@@ -283,7 +313,7 @@ fun LoginScreen(
                 text = "← Ganti peran",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2563EB),
+                color = PrimaryBlue,
                 modifier = Modifier
                     .clickable { onBackToRoleSelection() }
                     .padding(8.dp)
