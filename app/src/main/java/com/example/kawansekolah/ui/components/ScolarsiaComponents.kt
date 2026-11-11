@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -344,7 +345,268 @@ fun ChatInputField(
     }
 }
 
-// 9. Labeled TextField
+// 9. Kotak Saran / Callout Cards (Info, Fokus, Berhasil)
+@Composable
+fun CalloutInfoCard(
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = PrimarySoftBlue,
+        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryBlue)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(description, fontSize = 11.sp, color = PrimaryBlue)
+        }
+    }
+}
+
+@Composable
+fun FocusCard(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = ColorWhite,
+        border = BorderStroke(1.dp, WarningYellowStroke)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "FOKUS BELAJAR",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = WarningYellow
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkText)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(subtitle, fontSize = 11.sp, color = TextMuted)
+        }
+    }
+}
+
+@Composable
+fun SuccessCard(
+    title: String = "Semua nilai lengkap",
+    subtitle: String = "Siap dianalisis.",
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SuccessGreenBg,
+        border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = SuccessGreen)
+                Text(subtitle, fontSize = 11.sp, color = SuccessGreen.copy(alpha = 0.8f))
+            }
+        }
+    }
+}
+
+// 10. Hero Card (Rata-rata Semester)
+@Composable
+fun HeroScoreCard(
+    title: String = "RATA-RATA SEMESTER",
+    scoreText: String = "82,87",
+    trendText: String? = "Stabil",
+    subtitleText: String? = "4 mata pelajaran • Semester Ganjil",
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = PrimaryBlue)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorWhite.copy(alpha = 0.85f)
+                )
+
+                if (trendText != null) {
+                    Surface(
+                        shape = CircleShape,
+                        color = ColorWhite.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = trendText,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorWhite,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = scoreText,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorWhite
+            )
+
+            if (subtitleText != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitleText,
+                    fontSize = 11.sp,
+                    color = ColorWhite.copy(alpha = 0.85f)
+                )
+            }
+        }
+    }
+}
+
+// 11. Navy Card (Periode Penilaian)
+@Composable
+fun NavyPeriodeCard(
+    periodeName: String = "Semester Ganjil 2026/2027",
+    badgeText: String = "AKTIF",
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = NavyContainer)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "PERIODE PENILAIAN",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorWhite.copy(alpha = 0.7f)
+                )
+
+                Surface(
+                    shape = CircleShape,
+                    color = ColorWhite.copy(alpha = 0.2f)
+                ) {
+                    Text(
+                        text = badgeText,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorWhite,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = periodeName,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorWhite
+            )
+        }
+    }
+}
+
+// 12. Score Grid Item & Bar/Topik
+@Composable
+fun ScoreGridItem(
+    label: String,
+    percentageLabel: String,
+    scoreValue: Double,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = ColorWhite,
+        border = BorderStroke(1.dp, CardBorderStroke)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "$label • $percentageLabel",
+                fontSize = 10.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = if (scoreValue > 0) "${scoreValue.toInt()}" else "-",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkText
+            )
+        }
+    }
+}
+
+@Composable
+fun TopicProgressBar(
+    topicName: String,
+    score: Double,
+    modifier: Modifier = Modifier
+) {
+    val progress = (score / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val barColor = when {
+        score >= 80 -> SuccessGreen
+        score >= 70 -> WarningYellow
+        else -> DangerRed
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(topicName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkText)
+            Text(if (score > 0) "${score.toInt()}" else "-", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = barColor)
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            color = barColor,
+            trackColor = barColor.copy(alpha = 0.15f)
+        )
+    }
+}
+
+// 13. Labeled TextField
 @Composable
 fun LabeledTextField(
     value: String,
@@ -383,7 +645,7 @@ fun LabeledTextField(
     )
 }
 
-// 10. White Rounded Card
+// 14. White Rounded Card
 @Composable
 fun ScolarsiaCard(
     modifier: Modifier = Modifier,
@@ -402,140 +664,6 @@ fun ScolarsiaCard(
         border = BorderStroke(1.dp, borderColor)
     ) {
         Column(modifier = Modifier.padding(16.dp), content = content)
-    }
-}
-
-// 11. Colored Progress Bar (Green / Yellow / Red)
-@Composable
-fun ColoredProgressBar(
-    score: Double,
-    modifier: Modifier = Modifier
-) {
-    val progress = (score / 100.0).coerceIn(0.0, 1.0).toFloat()
-    val barColor = when {
-        score >= 80 -> SuccessGreen
-        score >= 70 -> WarningYellow
-        else -> DangerRed
-    }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .weight(1f)
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            color = barColor,
-            trackColor = barColor.copy(alpha = 0.2f)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = "${score.toInt()}",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = barColor
-        )
-    }
-}
-
-// 12. Info Card (Light Blue Card)
-@Composable
-fun InfoCard(
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = PrimarySoftBlue,
-        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.3f))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryBlue)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(description, fontSize = 11.sp, color = PrimaryBlue)
-        }
-    }
-}
-
-// 13. Warning Card (Cream Card)
-@Composable
-fun WarningCard(
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = WarningYellowBg,
-        border = BorderStroke(1.dp, WarningYellowStroke)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = WarningYellow)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(description, fontSize = 11.sp, color = WarningYellow)
-            }
-            StatusBadge(type = StatusBadgeType.PERLU_DICEK)
-        }
-    }
-}
-
-// 14. Dark Profile Header Card
-@Composable
-fun DarkProfileHeaderCard(
-    title: String,
-    subtitle: String,
-    email: String,
-    initials: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = NavyContainer)
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ScolarsiaAvatar(
-                initials = initials,
-                size = 56.dp,
-                variant = AvatarVariant.SOLID_BLUE
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorWhite
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 11.sp,
-                    color = ColorWhite.copy(alpha = 0.8f),
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-                Text(
-                    text = email,
-                    fontSize = 11.sp,
-                    color = ColorWhite.copy(alpha = 0.8f)
-                )
-            }
-        }
     }
 }
 
