@@ -44,49 +44,49 @@ fun RoleSelectionScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Scolarsia Blue Badge Logo
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(22.dp))
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(20.dp))
                     .background(PrimaryBlue),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.logo_scolarsia),
                     contentDescription = "Logo Scolarsia",
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier.size(50.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Scolarsia",
-                fontSize = 24.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkText
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Masuk sebagai siapa?",
+                text = "Masuk sebagai",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkText
             )
 
             Text(
-                text = "Pilih peranmu untuk melanjutkan",
+                text = "Silakan pilih status akun Anda",
                 fontSize = 12.sp,
                 color = TextMuted,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 2.dp)
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 4 Role Card Items (Guru, Wali kelas, Siswa, Orang tua)
             RoleCardItem(
@@ -99,7 +99,7 @@ fun RoleSelectionScreen(
                 onClick = { onRoleSelected(UserRole.GURU) }
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             RoleCardItem(
                 role = UserRole.WALI_KELAS,
@@ -111,7 +111,7 @@ fun RoleSelectionScreen(
                 onClick = { onRoleSelected(UserRole.WALI_KELAS) }
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             RoleCardItem(
                 role = UserRole.SISWA,
@@ -123,7 +123,7 @@ fun RoleSelectionScreen(
                 onClick = { onRoleSelected(UserRole.SISWA) }
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             RoleCardItem(
                 role = UserRole.ORANG_TUA,
@@ -136,7 +136,7 @@ fun RoleSelectionScreen(
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Admin sekolah? Daftarkan sekolah",
@@ -148,7 +148,7 @@ fun RoleSelectionScreen(
                     .padding(8.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
@@ -169,7 +169,7 @@ private fun RoleCardItem(
         shape = RoundedCornerShape(16.dp),
         color = ColorWhite,
         border = BorderStroke(1.dp, CardBorderStroke),
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
