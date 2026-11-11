@@ -1,23 +1,19 @@
 package com.example.kawansekolah.ui.components
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.ui.theme.*
 
 @Composable
 fun BottomNavigationBar(
@@ -43,15 +39,15 @@ fun BottomNavigationBar(
             Triple("Insight", Icons.Default.AutoAwesome, "insight_page"),
             Triple("Profil", Icons.Default.Person, "profil")
         )
-        UserRole.SISWA -> listOf(
-            Triple("Beranda", Icons.Default.Home, "beranda"),
-            Triple("Nilai", Icons.Default.Assessment, "nilai"),
-            Triple("AI", Icons.Default.AutoAwesome, "ai"),
-            Triple("Profil", Icons.Default.Person, "profil")
-        )
         UserRole.ORANG_TUA -> listOf(
             Triple("Beranda", Icons.Default.Home, "beranda"),
             Triple("Nilai Anak", Icons.Default.Assessment, "nilai"),
+            Triple("AI", Icons.Default.AutoAwesome, "ai"),
+            Triple("Profil", Icons.Default.Person, "profil")
+        )
+        UserRole.SISWA -> listOf(
+            Triple("Beranda", Icons.Default.Home, "beranda"),
+            Triple("Nilai", Icons.Default.Assessment, "nilai"),
             Triple("AI", Icons.Default.AutoAwesome, "ai"),
             Triple("Profil", Icons.Default.Person, "profil")
         )
@@ -60,30 +56,23 @@ fun BottomNavigationBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    Box(
+    Column(
         modifier = Modifier
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(32.dp))
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.08f)
-                    )
-                ),
-                shape = RoundedCornerShape(32.dp)
-            )
+            .navigationBarsPadding()
     ) {
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = CardBorderStroke
+        )
+
         NavigationBar(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.90f),
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            containerColor = ColorWhite,
+            contentColor = TextMuted,
             windowInsets = WindowInsets(0, 0, 0, 0),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp),
+                .height(64.dp),
             tonalElevation = 0.dp
         ) {
             items.forEach { (title, icon, route) ->
@@ -105,7 +94,7 @@ fun BottomNavigationBar(
                         )
                     },
                     selected = isSelected,
-                    alwaysShowLabel = false,
+                    alwaysShowLabel = true,
                     onClick = {
                         if (currentRoute != route) {
                             navController.navigate(route) {
@@ -118,11 +107,11 @@ fun BottomNavigationBar(
                         }
                     },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                        selectedIconColor = PrimaryBlue,
+                        selectedTextColor = PrimaryBlue,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted,
+                        indicatorColor = PrimarySoftBlue
                     )
                 )
             }
