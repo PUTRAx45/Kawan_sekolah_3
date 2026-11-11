@@ -67,7 +67,7 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Larger Logo Box Badge
+            // Static Logo Box Badge
             Box(
                 modifier = Modifier
                     .size(128.dp)
@@ -84,6 +84,7 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Static Title Text
             Text(
                 text = "Scolarsia",
                 fontSize = 32.sp,
@@ -91,6 +92,7 @@ fun SplashScreen(
                 color = Color.White
             )
 
+            // Static Tagline Text
             Text(
                 text = "Sinergi Sekolah, Panduan Masa Depan",
                 fontSize = 14.sp,
@@ -100,22 +102,29 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            // 4 Slowmo Pulse Loading Dots
+            // 4 Animated Dots with Fixed Layout Height (Logo & Text Stay 100% Still)
             Row(
+                modifier = Modifier.height(20.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 dotScales.forEach { scale ->
                     val curScale = scale.value
-                    val dotSize = (9.5f * curScale).dp
+                    val dotSize = (8f * curScale).dp
                     val dotOpacity = (0.35f + 0.65f * (curScale - 0.55f) / 0.8f).coerceIn(0.35f, 1.0f)
 
                     Box(
                         modifier = Modifier
-                            .size(dotSize)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = dotOpacity))
-                    )
+                            .size(14.dp), // Fixed Container so outer row height never fluctuates
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(dotSize)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = dotOpacity))
+                        )
+                    }
                 }
             }
         }
