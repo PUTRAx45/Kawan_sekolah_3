@@ -1,5 +1,6 @@
 package com.example.kawansekolah.ui.login
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +46,10 @@ fun LoginScreen(
     val authUiState by authViewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+
+    BackHandler {
+        onBackToRoleSelection()
+    }
 
     var selectedRole by remember { mutableStateOf(initialRole) }
     var identifierInput by remember {

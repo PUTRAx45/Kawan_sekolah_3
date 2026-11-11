@@ -1,5 +1,7 @@
 package com.example.kawansekolah.ui.login
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +33,12 @@ fun RoleSelectionScreen(
     onRoleSelected: (UserRole) -> Unit,
     onAdminClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    BackHandler {
+        (context as? Activity)?.finish()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
