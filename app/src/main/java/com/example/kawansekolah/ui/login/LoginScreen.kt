@@ -52,18 +52,8 @@ fun LoginScreen(
     }
 
     var selectedRole by remember { mutableStateOf(initialRole) }
-    var identifierInput by remember {
-        mutableStateOf(
-            when (initialRole) {
-                UserRole.SISWA -> "12345"
-                UserRole.GURU -> "guru@kawansekolah.sch.id"
-                UserRole.WALI_KELAS -> "guru.wali@kawansekolah.sch.id"
-                UserRole.ORANG_TUA -> "ortu.ahmad@kawansekolah.local"
-                UserRole.ADMIN -> "admin@sekolah.sch.id"
-            }
-        )
-    }
-    var passwordInput by remember { mutableStateOf("123456") }
+    var identifierInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -79,6 +69,22 @@ fun LoginScreen(
         UserRole.SISWA -> "NISN atau email"
         UserRole.ORANG_TUA -> "Email atau nomor HP"
         else -> "Email"
+    }
+
+    val emailPlaceholder = when (selectedRole) {
+        UserRole.GURU -> "guru@scolarsia.sch.id"
+        UserRole.WALI_KELAS -> "walikelas@scolarsia.sch.id"
+        UserRole.SISWA -> "siswa@scolarsia.sch.id / 09231"
+        UserRole.ORANG_TUA -> "orangtua@scolarsia.sch.id"
+        UserRole.ADMIN -> "admin@scolarsia.sch.id"
+    }
+
+    val passwordPlaceholder = when (selectedRole) {
+        UserRole.GURU -> "1g2u3r4u"
+        UserRole.WALI_KELAS -> "1w2a3l4i"
+        UserRole.SISWA -> "1s2i3s4w"
+        UserRole.ORANG_TUA -> "1o2r3a4n"
+        UserRole.ADMIN -> "1a2d3m4i"
     }
 
     LaunchedEffect(authUiState) {
@@ -185,6 +191,7 @@ fun LoginScreen(
                 value = identifierInput,
                 onValueChange = { identifierInput = it },
                 label = { Text(fieldLabel) },
+                placeholder = { Text(emailPlaceholder, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
@@ -203,6 +210,7 @@ fun LoginScreen(
                     }
                 },
                 label = { Text("Kata sandi") },
+                placeholder = { Text(passwordPlaceholder, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                 trailingIcon = {
                     val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
@@ -242,7 +250,9 @@ fun LoginScreen(
             Button(
                 onClick = {
                     errorMessage = ""
-                    authViewModel.login(identifierInput, passwordInput)
+                    val inputEmail = identifierInput.ifBlank { emailPlaceholder.substringBefore(" ") }
+                    val inputPass = passwordInput.ifBlank { passwordPlaceholder }
+                    authViewModel.login(inputEmail, inputPass)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

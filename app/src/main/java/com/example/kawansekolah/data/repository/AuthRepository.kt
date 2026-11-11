@@ -97,7 +97,7 @@ object AuthRepository {
                     val email = if (identifier.contains("@")) {
                         identifier.trim()
                     } else {
-                        "${identifier.trim()}@kawansekolah.local"
+                        "${identifier.trim()}@scolarsia.sch.id"
                     }
 
                     // Stage 1: signInWithEmailAndPassword
@@ -115,13 +115,19 @@ object AuthRepository {
 
                     // Stage 2: Fetch User Document (with Auto-Provisioning Fallback)
                     val user = getUserProfile(uid) ?: run {
-                        val inferredRole = if (email.contains("guru")) "TEACHER" else if (email.contains("ortu")) "PARENT" else "STUDENT"
+                        val inferredRole = when {
+                            email.contains("admin") -> "ADMIN"
+                            email.contains("walikelas") || email.contains("wali") -> "WALI_KELAS"
+                            email.contains("guru") -> "TEACHER"
+                            email.contains("orangtua") || email.contains("ortu") -> "PARENT"
+                            else -> "STUDENT"
+                        }
                         val fallbackUser = User(
                             uid = uid,
-                            name = if (email.contains("@kawansekolah.local")) "Siswa ${identifier.trim()}" else identifier.substringBefore("@"),
+                            name = if (email.contains("@scolarsia.sch.id")) "Siswa ${identifier.trim()}" else identifier.substringBefore("@"),
                             email = email,
                             role = inferredRole,
-                            teacherId = "guru_smp_01"
+                            teacherId = "guru_01"
                         )
                         try {
                             firestore.collection("users").document(uid).set(fallbackUser).await()
@@ -133,7 +139,7 @@ object AuthRepository {
                     // Stage 3 & 4 & 5: Parallel fetching for related data
                     coroutineScope {
                         val teacherProfDeferred = async {
-                            if (user.role == "TEACHER") {
+                            if (user.role == "TEACHER" || user.role == "GURU") {
                                 measureTimeMillis { AcademicRepository.getTeacherProfile(uid) }
                             } else 0L
                         }
@@ -161,7 +167,7 @@ object AuthRepository {
                 }
             } catch (e: FirebaseAuthInvalidUserException) {
                 val msg = if (BuildConfig.USE_EMULATOR) {
-                    "Akun / NISN tidak ditemukan di emulator Auth. Silakan jalankan skrip 'node seed-emulator.js' di backend."
+                    "Akun / NISN tidak ditemukan di emulator Auth. Silakan gunakan kredensial resmi Scolarsia."
                 } else {
                     "NIS/email atau kata sandi yang Anda masukkan salah."
                 }
@@ -177,10 +183,11 @@ object AuthRepository {
                 // Offline / UI Preview Fallback Mode
                 val cleanId = identifier.trim().lowercase()
                 val fallbackUser = when {
-                    cleanId.contains("guru.wali") || cleanId.contains("wali") -> User(uid = "guru_wali_01", name = "Siti Aminah", email = "guru.wali@kawansekolah.sch.id", role = "WALI_KELAS", className = "9-A")
-                    cleanId.contains("guru") -> User(uid = "guru_smp_01", name = "Budi Santoso", email = "guru@kawansekolah.sch.id", role = "GURU")
-                    cleanId.contains("ortu") -> User(uid = "ortu_1", name = "Bapak Ahmad", email = "ortu.ahmad@kawansekolah.local", role = "ORANG_TUA", studentIds = listOf("std_1"))
-                    else -> User(uid = "std_1", name = "Ahmad Budi", email = "12345@kawansekolah.local", role = "SISWA", className = "9-A")
+                    cleanId.contains("admin") -> User(uid = "admin_01", name = "Arif Setiawan", email = "admin@scolarsia.sch.id", role = "ADMIN")
+                    cleanId.contains("walikelas") || cleanId.contains("wali") -> User(uid = "wali_01", name = "Siti Aminah", email = "walikelas@scolarsia.sch.id", role = "WALI_KELAS", className = "9-A")
+                    cleanId.contains("guru") -> User(uid = "guru_01", name = "Budi Santoso", email = "guru@scolarsia.sch.id", role = "GURU")
+                    cleanId.contains("orangtua") || cleanId.contains("ortu") -> User(uid = "ortu_01", name = "Bapak Ahmad", email = "orangtua@scolarsia.sch.id", role = "ORANG_TUA", studentIds = listOf("std_01"))
+                    else -> User(uid = "std_01", name = "Ahmad Budi", email = "siswa@scolarsia.sch.id", role = "SISWA", className = "9-A")
                 }
                 setCachedUser(fallbackUser)
                 loggedUser = fallbackUser
