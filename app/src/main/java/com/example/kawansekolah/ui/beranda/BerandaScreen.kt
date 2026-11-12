@@ -1,17 +1,15 @@
 package com.example.kawansekolah.ui.beranda
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +23,8 @@ import androidx.navigation.NavHostController
 import com.example.kawansekolah.data.model.Subject
 import com.example.kawansekolah.data.model.Task
 import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.ui.components.TopBarArea
+import com.example.kawansekolah.ui.components.*
+import com.example.kawansekolah.ui.theme.*
 
 @Composable
 fun BerandaScreen(
@@ -57,12 +56,12 @@ fun BerandaScreen(
         ) {
             when (userRole) {
                 UserRole.GURU -> {
-                    // GURU BERANDA (Image 5)
+                    // GURU BERANDA (Zero State & Responsive)
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = PrimaryBlue)
                         ) {
                             Column(modifier = Modifier.padding(20.dp)) {
                                 Row(
@@ -70,88 +69,71 @@ fun BerandaScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("KELAS IX A • MATEMATIKA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                                        Text("80%", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 4.dp))
+                                    Text(
+                                        text = "PROGRES PENILAIAN",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ColorWhite.copy(alpha = 0.85f)
+                                    )
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = ColorWhite.copy(alpha = 0.2f)
+                                    ) {
+                                        Text(
+                                            text = "0%",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ColorWhite,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("24 / 30 siswa sudah dinilai", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Text(
+                                    text = "0 / 0 siswa sudah dinilai",
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ColorWhite
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                LinearProgressIndicator(
+                                    progress = { 0f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
+                                    color = ColorWhite,
+                                    trackColor = ColorWhite.copy(alpha = 0.25f)
+                                )
                             }
                         }
                     }
 
                     item {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFFEF3C7),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("6 nilai belum lengkap", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
-                                    Text("Tugas, UTS, atau UAS belum masuk", fontSize = 11.sp, color = Color(0xFFB45309))
-                                }
-                                Badge(containerColor = Color(0xFFF59E0B)) {
-                                    Text("PERLU DICEK", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
-                                }
-                            }
-                        }
-                    }
-
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("TOPIK LEMAH", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Matematika • Teorema Pythagoras", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("Rata-rata 68 • buka AI Analytics untuk saran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-
-                    item {
-                        Column {
-                            Text("Aktivitas terbaru", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                            ) {
-                                Text("Nilai Andi Pratama diperbarui • 10.42", fontSize = 12.sp, modifier = Modifier.padding(12.dp))
-                            }
-                        }
+                        EmptyStateView(
+                            title = "Belum ada data nilai",
+                            description = "Belum ada data nilai untuk dianalisis. Silakan lakukan input nilai terlebih dahulu.",
+                            icon = Icons.Default.Assessment
+                        )
                     }
 
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Button(
+                            SecondaryButton(
+                                text = "Unggah nilai CSV",
                                 onClick = { navController.navigate("unggah_csv") },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Unggah nilai CSV", fontWeight = FontWeight.Bold)
-                            }
+                                icon = Icons.Default.UploadFile
+                            )
 
-                            OutlinedButton(
+                            PrimaryButton(
+                                text = "Input nilai",
                                 onClick = { navController.navigate("guru_input") },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Kelola nilai", fontWeight = FontWeight.Bold)
-                            }
+                                icon = Icons.Default.Edit
+                            )
                         }
                     }
                 }
@@ -221,13 +203,10 @@ fun BerandaScreen(
                     }
 
                     item {
-                        Button(
-                            onClick = { navController.navigate("rekap_wali") },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Lihat rekap kelas", fontWeight = FontWeight.Bold)
-                        }
+                        PrimaryButton(
+                            text = "Lihat rekap kelas",
+                            onClick = { navController.navigate("rekap_wali") }
+                        )
                     }
                 }
 
@@ -293,13 +272,10 @@ fun BerandaScreen(
                     }
 
                     item {
-                        Button(
-                            onClick = { navController.navigate("ai") },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Lihat insight anak", fontWeight = FontWeight.Bold)
-                        }
+                        PrimaryButton(
+                            text = "Lihat insight anak",
+                            onClick = { navController.navigate("ai") }
+                        )
                     }
                 }
 
@@ -379,13 +355,10 @@ fun BerandaScreen(
                     }
 
                     item {
-                        Button(
-                            onClick = { navController.navigate("insight_page") },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Lihat insight AI", fontWeight = FontWeight.Bold)
-                        }
+                        PrimaryButton(
+                            text = "Lihat insight AI",
+                            onClick = { navController.navigate("insight_page") }
+                        )
                     }
                 }
             }
