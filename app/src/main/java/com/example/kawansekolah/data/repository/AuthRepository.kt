@@ -32,17 +32,20 @@ object AuthRepository {
 
     // In-Memory User Data Cache
     private val userMemoryCache = mutableMapOf<String, User>()
+    private var activeUserUid: String? = null
 
     fun getCachedUser(uid: String): User? = userMemoryCache[uid]
 
     fun setCachedUser(user: User) {
         if (user.uid.isNotBlank()) {
             userMemoryCache[user.uid] = user
+            activeUserUid = user.uid
         }
     }
 
     fun clearCache() {
         userMemoryCache.clear()
+        activeUserUid = null
     }
 
     private fun getSecondaryAuth(context: Context): FirebaseAuth {
@@ -64,7 +67,7 @@ object AuthRepository {
         return secondaryAuth!!
     }
 
-    fun getCurrentUserUid(): String? = auth.currentUser?.uid
+    fun getCurrentUserUid(): String? = auth.currentUser?.uid ?: activeUserUid
 
     suspend fun getUserProfile(uid: String): User? {
         userMemoryCache[uid]?.let {
