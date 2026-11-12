@@ -53,7 +53,11 @@ fun StatistikScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         TopAppBar(
-            title = { Text("Statistik & Grafik Nilai", fontWeight = FontWeight.Bold) }
+            title = { Text("Statistik & Grafik Nilai", fontWeight = FontWeight.Bold) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         if (!canView) {

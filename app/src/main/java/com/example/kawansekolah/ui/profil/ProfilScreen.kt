@@ -59,7 +59,11 @@ fun ProfilScreen(
                     text = "Profil saya",
                     style = MaterialTheme.typography.titleLarge
                 )
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         Column(

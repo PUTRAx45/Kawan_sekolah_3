@@ -84,7 +84,11 @@ fun InputNilaiScreen(
                         Icon(Icons.Default.UploadFile, contentDescription = "Unggah CSV")
                     }
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         LazyColumn(

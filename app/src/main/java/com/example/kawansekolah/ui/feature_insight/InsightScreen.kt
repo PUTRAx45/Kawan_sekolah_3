@@ -85,7 +85,11 @@ fun InsightScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         TopAppBar(
-            title = { Text("AI Auto-Insight Pembelajaran", fontWeight = FontWeight.Bold) }
+            title = { Text("AI Auto-Insight Pembelajaran", fontWeight = FontWeight.Bold) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
     if (isWali || userRole.contains("WALI", ignoreCase = true)) {
