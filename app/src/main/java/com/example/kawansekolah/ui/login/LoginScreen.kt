@@ -55,17 +55,7 @@ fun LoginScreen(
 
     var selectedRole by remember { mutableStateOf(initialRole) }
     var identifierInput by remember { mutableStateOf("") }
-    var passwordInput by remember {
-        mutableStateOf(
-            when (initialRole) {
-                UserRole.GURU -> "1g2u3r4u"
-                UserRole.WALI_KELAS -> "1w2a3l4i"
-                UserRole.SISWA -> "1s2i3s4w"
-                UserRole.ORANG_TUA -> "1o2r3a4n"
-                UserRole.ADMIN -> "1a2d3m4i"
-            }
-        )
-    }
+    var passwordInput by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -84,27 +74,21 @@ fun LoginScreen(
     }
 
     val emailPlaceholder = when (selectedRole) {
-        UserRole.GURU -> "guru@sekolah.sch.id (diberikan admin)"
-        UserRole.WALI_KELAS -> "walikelas@sekolah.sch.id (diberikan admin)"
-        UserRole.SISWA -> "nisn@sekolah.sch.id (diberikan admin)"
-        UserRole.ORANG_TUA -> "orangtua@sekolah.sch.id (diberikan admin)"
-        UserRole.ADMIN -> "admin@sekolah.sch.id (diberikan admin)"
+        UserRole.GURU -> "guru@sekolah.sch.id"
+        UserRole.WALI_KELAS -> "walikelas@sekolah.sch.id"
+        UserRole.SISWA -> "siswa@sekolah.sch.id"
+        UserRole.ORANG_TUA -> "orangtua@sekolah.sch.id"
+        UserRole.ADMIN -> "admin@sekolah.sch.id"
     }
 
-    val defaultFallbackEmail = when (selectedRole) {
-        UserRole.GURU -> "guru@scolarsia.sch.id"
-        UserRole.WALI_KELAS -> "walikelas@scolarsia.sch.id"
-        UserRole.SISWA -> "siswa@scolarsia.sch.id"
-        UserRole.ORANG_TUA -> "orangtua@scolarsia.sch.id"
-        UserRole.ADMIN -> "admin@scolarsia.sch.id"
-    }
+    val passwordPlaceholder = "1234567"
 
-    val passwordPlaceholder = when (selectedRole) {
-        UserRole.GURU -> "1g2u3r4u"
-        UserRole.WALI_KELAS -> "1w2a3l4i"
-        UserRole.SISWA -> "1s2i3s4w"
-        UserRole.ORANG_TUA -> "1o2r3a4n"
-        UserRole.ADMIN -> "1a2d3m4i"
+    val defaultDemoEmail = when (selectedRole) {
+        UserRole.GURU -> "guru12@scolarsia.ac.id"
+        UserRole.WALI_KELAS -> "walikelas12@scolarsia.ac.id"
+        UserRole.SISWA -> "siswa12@scolarsia.ac.id"
+        UserRole.ORANG_TUA -> "orangtua12@scolarsia.ac.id"
+        UserRole.ADMIN -> "admin12@scolarsia.ac.id"
     }
 
     LaunchedEffect(authUiState) {
@@ -206,7 +190,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Field 1: Email / NISN / HP
+            // Field 1: Email / NISN / HP (Initial State Empty "", Placeholder #9CA3AF)
             OutlinedTextField(
                 value = identifierInput,
                 onValueChange = { identifierInput = it },
@@ -224,7 +208,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Field 2: Password
+            // Field 2: Password (Initial State Empty "", Placeholder "1234567")
             OutlinedTextField(
                 value = passwordInput,
                 onValueChange = {
@@ -280,8 +264,8 @@ fun LoginScreen(
             Button(
                 onClick = {
                     errorMessage = ""
-                    val inputEmail = identifierInput.ifBlank { defaultFallbackEmail }
-                    val inputPass = passwordInput.ifBlank { passwordPlaceholder }
+                    val inputEmail = identifierInput.ifBlank { defaultDemoEmail }
+                    val inputPass = passwordInput.ifBlank { "1g2u3r4u" }
                     authViewModel.login(inputEmail, inputPass)
                 },
                 modifier = Modifier

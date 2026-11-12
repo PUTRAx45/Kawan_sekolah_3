@@ -183,11 +183,11 @@ object AuthRepository {
                 // Offline / UI Preview Fallback Mode
                 val cleanId = identifier.trim().lowercase()
                 val fallbackUser = when {
-                    cleanId.contains("admin") -> User(uid = "admin_01", name = "Arif Setiawan", email = "admin@scolarsia.sch.id", role = "ADMIN")
-                    cleanId.contains("walikelas") || cleanId.contains("wali") -> User(uid = "wali_01", name = "Siti Aminah", email = "walikelas@scolarsia.sch.id", role = "WALI_KELAS", className = "9-A")
-                    cleanId.contains("guru") -> User(uid = "guru_01", name = "Budi Santoso", email = "guru@scolarsia.sch.id", role = "GURU")
-                    cleanId.contains("orangtua") || cleanId.contains("ortu") -> User(uid = "ortu_01", name = "Bapak Ahmad", email = "orangtua@scolarsia.sch.id", role = "ORANG_TUA", studentIds = listOf("std_01"))
-                    else -> User(uid = "std_01", name = "Ahmad Budi", email = "siswa@scolarsia.sch.id", role = "SISWA", className = "9-A")
+                    cleanId.contains("admin") -> User(uid = "admin_01", name = "Arif Setiawan", email = "admin12@scolarsia.ac.id", role = "ADMIN")
+                    cleanId.contains("walikelas") || cleanId.contains("wali") -> User(uid = "wali_01", name = "Siti Aminah", email = "walikelas12@scolarsia.ac.id", role = "WALI_KELAS", className = "9-A")
+                    cleanId.contains("guru") -> User(uid = "guru_01", name = "Budi Santoso", email = "guru12@scolarsia.ac.id", role = "GURU")
+                    cleanId.contains("orangtua") || cleanId.contains("ortu") -> User(uid = "ortu_01", name = "Bapak Ahmad", email = "orangtua12@scolarsia.ac.id", role = "ORANG_TUA", studentIds = listOf("std_01"))
+                    else -> User(uid = "std_01", name = "Ahmad Budi", email = "siswa12@scolarsia.ac.id", role = "SISWA", className = "9-A")
                 }
                 setCachedUser(fallbackUser)
                 loggedUser = fallbackUser
