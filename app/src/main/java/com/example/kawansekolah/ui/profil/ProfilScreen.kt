@@ -32,6 +32,16 @@ fun ProfilScreen(
     onPrivasiNotifikasiClick: () -> Unit = {},
     onPerangkatSesiClick: () -> Unit = {}
 ) {
+    if (userRole.equals("WALI_KELAS", ignoreCase = true) || userRole.equals("HOMEROOM_TEACHER", ignoreCase = true) || userRole.contains("WALI", ignoreCase = true)) {
+        com.example.kawansekolah.ui.feature_wali.WaliProfilScreen(
+            onLogoutClick = onLogoutClick,
+            onUbahKataSandiClick = onUbahKataSandiClick,
+            onPrivasiNotifikasiClick = onPrivasiNotifikasiClick,
+            onPerangkatSesiClick = onPerangkatSesiClick
+        )
+        return
+    }
+
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     val roleLabel = when (userRole.uppercase()) {

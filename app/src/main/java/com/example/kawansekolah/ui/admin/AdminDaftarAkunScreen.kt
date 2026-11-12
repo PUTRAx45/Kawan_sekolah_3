@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 fun AdminDaftarAkunScreen(
     onBackClick: () -> Unit = {},
     onImportCsvClick: () -> Unit = {},
+    onNavigateToPenugasanGuru: () -> Unit = {},
     onAccountCreated: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
@@ -115,7 +116,13 @@ fun AdminDaftarAkunScreen(
 
             Text("Pengguna wajib mengubah kata sandi saat pertama masuk.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if (selectedRole == "Guru" || selectedRole == "Wali kelas") {
+                TextButton(onClick = onNavigateToPenugasanGuru) {
+                    Text("Atur Penugasan & Data Pengajar Guru ->", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             TextButton(onClick = onImportCsvClick) {
                 Text("Impor banyak akun lewat CSV ->", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))

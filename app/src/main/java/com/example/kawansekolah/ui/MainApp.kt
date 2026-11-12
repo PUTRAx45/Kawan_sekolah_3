@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.example.kawansekolah.FirebaseEmulatorHelper
 import com.example.kawansekolah.data.SeedDataHelper
 import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.ui.guru.TeacherProfileScreen
 import com.example.kawansekolah.ui.login.LoginScreen
 import com.example.kawansekolah.ui.login.RoleSelectionScreen
 import com.example.kawansekolah.ui.splash.SplashScreen
@@ -60,7 +59,6 @@ fun MainApp(
     var isLoggedIn by remember { mutableStateOf(sessionManager.isLoggedIn()) }
     var userDisplayName by remember { mutableStateOf(sessionManager.getUserName()) }
     var userRole by remember { mutableStateOf(sessionManager.getUserRole()) }
-    var needsTeacherProfile by remember { mutableStateOf(false) }
     var showLoginSuccessDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -125,12 +123,7 @@ fun MainApp(
                             userDisplayName = finalName
                             userRole = role
                             isLoggedIn = true
-
-                            if (role == UserRole.GURU && user.teacherId.isBlank()) {
-                                needsTeacherProfile = true
-                            } else {
-                                showLoginSuccessDialog = true
-                            }
+                            showLoginSuccessDialog = true
 
                             NotificationHelper.showSystemNotification(
                                 context = context,
@@ -147,13 +140,6 @@ fun MainApp(
                         }
                     )
                 }
-            } else if (needsTeacherProfile) {
-                TeacherProfileScreen(
-                    onProfileSavedSuccess = {
-                        needsTeacherProfile = false
-                        showLoginSuccessDialog = true
-                    }
-                )
             } else {
                 MainScreen(
                     userName = userDisplayName,
@@ -163,9 +149,8 @@ fun MainApp(
                     onLogout = {
                         sessionManager.clearSession()
                         isLoggedIn = false
-                        needsTeacherProfile = false
                         selectedRoleForLogin = null
-                        userDisplayName = "Budi Santoso"
+                        userDisplayName = "Pengguna"
                         userRole = UserRole.SISWA
                     },
                     initialNavigateTo = initialNavigateTo,

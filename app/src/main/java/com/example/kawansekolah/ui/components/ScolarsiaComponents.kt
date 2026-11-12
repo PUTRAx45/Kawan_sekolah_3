@@ -121,7 +121,7 @@ fun ScolarsiaOutlineButton(
     SecondaryButton(text = text, onClick = onClick, modifier = modifier, enabled = enabled, icon = icon)
 }
 
-// 3. Danger Button (White, Border #FCA5A5, #E02424 SemiBold)
+// 3. Danger Button (Transparent, Border #FCA5A5, #E02424 SemiBold)
 @Composable
 fun DangerButton(
     text: String,
@@ -139,7 +139,7 @@ fun DangerButton(
         enabled = enabled,
         border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.White,
+            containerColor = Color.Transparent,
             contentColor = DangerRed
         )
     ) {
@@ -375,7 +375,7 @@ fun FocusCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = ColorWhite,
+        color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, WarningYellowStroke)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -386,9 +386,9 @@ fun FocusCard(
                 color = WarningYellow
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = DarkText)
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(subtitle, fontSize = 11.sp, color = TextMuted)
+            Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -545,8 +545,8 @@ fun ScoreGridItem(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        color = ColorWhite,
-        border = BorderStroke(1.dp, CardBorderStroke)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -555,7 +555,7 @@ fun ScoreGridItem(
             Text(
                 text = "$label • $percentageLabel",
                 fontSize = 10.sp,
-                color = TextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -563,7 +563,7 @@ fun ScoreGridItem(
                 text = if (scoreValue > 0) "${scoreValue.toInt()}" else "-",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkText
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -588,7 +588,7 @@ fun TopicProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(topicName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkText)
+            Text(topicName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Text(if (score > 0) "${score.toInt()}" else "-", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = barColor)
         }
 
@@ -688,13 +688,13 @@ fun EmptyStateView(
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
-                .background(BackgroundMuted),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -705,7 +705,7 @@ fun EmptyStateView(
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkText,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
 
@@ -714,7 +714,7 @@ fun EmptyStateView(
         Text(
             text = description,
             fontSize = 12.sp,
-            color = TextMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             lineHeight = 16.sp
         )

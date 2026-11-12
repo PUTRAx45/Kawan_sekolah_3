@@ -32,10 +32,10 @@ import com.example.kawansekolah.ui.pelajaran.components.SubjectDetailBottomSheet
 import com.example.kawansekolah.ui.profil.ProfilScreen
 import com.example.kawansekolah.ui.theme.ThemeMode
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    userName: String = "Budi Santoso",
+    userName: String = "Pengguna",
     userRole: UserRole = UserRole.SISWA,
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onThemeModeChange: (ThemeMode) -> Unit = {},
@@ -79,35 +79,39 @@ fun MainScreen(
 
     // Notifications State
     val startMillis = remember { System.currentTimeMillis() }
-    var notifications by remember {
+    var notifications by remember(userRole) {
         mutableStateOf(
-            listOf(
-                NotificationItem(
-                    id = 1,
-                    title = "Login Berhasil",
-                    message = "Selamat datang kembali, $userName! Akun ${userRole.label} Anda berhasil terhubung.",
-                    timestampMillis = startMillis,
-                    type = NotificationType.LOGIN,
-                    isRead = false
-                ),
-                NotificationItem(
-                    id = 2,
-                    title = "Tugas Mendatang",
-                    message = "Latihan Soal Aljabar Bab 3 jatuh tempo besok jam 23:59.",
-                    timestampMillis = startMillis,
-                    type = NotificationType.TASK,
-                    relatedTaskId = 1,
-                    isRead = false
-                ),
-                NotificationItem(
-                    id = 3,
-                    title = "Fitur AI Tutor Aktif",
-                    message = "Tanyakan materi pelajaran atau latihan soal kapan saja dengan AI Tutor.",
-                    timestampMillis = startMillis,
-                    type = NotificationType.AI,
-                    isRead = false
+            if (userRole == UserRole.GURU || userRole == UserRole.WALI_KELAS) {
+                emptyList<NotificationItem>()
+            } else {
+                listOf(
+                    NotificationItem(
+                        id = 1,
+                        title = "Login Berhasil",
+                        message = "Selamat datang kembali, $userName! Akun ${userRole.label} Anda berhasil terhubung.",
+                        timestampMillis = startMillis,
+                        type = NotificationType.LOGIN,
+                        isRead = false
+                    ),
+                    NotificationItem(
+                        id = 2,
+                        title = "Tugas Mendatang",
+                        message = "Latihan Soal Aljabar Bab 3 jatuh tempo besok jam 23:59.",
+                        timestampMillis = startMillis,
+                        type = NotificationType.TASK,
+                        relatedTaskId = 1,
+                        isRead = false
+                    ),
+                    NotificationItem(
+                        id = 3,
+                        title = "Fitur AI Tutor Aktif",
+                        message = "Tanyakan materi pelajaran atau latihan soal kapan saja dengan AI Tutor.",
+                        timestampMillis = startMillis,
+                        type = NotificationType.AI,
+                        isRead = false
+                    )
                 )
-            )
+            }
         )
     }
 
@@ -184,11 +188,8 @@ fun MainScreen(
     }
 
     val startDest = when (userRole) {
-        UserRole.GURU -> "guru_input"
-        UserRole.WALI_KELAS -> "rekap_wali"
-        UserRole.ORANG_TUA -> "nilai"
-        UserRole.SISWA -> "beranda"
         UserRole.ADMIN -> "admin_beranda"
+        else -> "beranda"
     }
 
     val roleString = when (userRole) {
@@ -234,7 +235,8 @@ fun MainScreen(
                 RekapNilaiScreen(
                     userRole = roleString,
                     userId = activeUserId,
-                    onNavigateToStatistik = { navController.navigate("statistik") }
+                    onNavigateToStatistik = { navController.navigate("statistik") },
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable("statistik") {
@@ -338,13 +340,20 @@ fun MainScreen(
             composable("admin_pengguna") {
                 com.example.kawansekolah.ui.admin.AdminPenggunaScreen(
                     onNavigateToDetail = { navController.navigate("admin_detail_akun") },
-                    onNavigateToDaftarAccount = { navController.navigate("admin_daftar_akun") }
+                    onNavigateToDaftarAccount = { navController.navigate("admin_daftar_akun") },
+                    onNavigateToPenugasanGuru = { navController.navigate("admin_penugasan_guru") }
                 )
             }
             composable("admin_akademik") {
                 com.example.kawansekolah.ui.admin.AdminPenggunaScreen(
                     onNavigateToDetail = { navController.navigate("admin_detail_akun") },
-                    onNavigateToDaftarAccount = { navController.navigate("admin_daftar_akun") }
+                    onNavigateToDaftarAccount = { navController.navigate("admin_daftar_akun") },
+                    onNavigateToPenugasanGuru = { navController.navigate("admin_penugasan_guru") }
+                )
+            }
+            composable("admin_penugasan_guru") {
+                com.example.kawansekolah.ui.admin.AdminPenugasanGuruScreen(
+                    onBackClick = { navController.popBackStack() }
                 )
             }
             composable("admin_profil") {
@@ -357,12 +366,16 @@ fun MainScreen(
                 )
             }
             composable("admin_detail_akun") {
-                com.example.kawansekolah.ui.admin.AdminDetailAkunScreen(onBackClick = { navController.popBackStack() })
+                com.example.kawansekolah.ui.admin.AdminDetailAkunScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToPenugasanGuru = { navController.navigate("admin_penugasan_guru") }
+                )
             }
             composable("admin_daftar_akun") {
                 com.example.kawansekolah.ui.admin.AdminDaftarAkunScreen(
                     onBackClick = { navController.popBackStack() },
                     onImportCsvClick = { navController.navigate("admin_impor_csv") },
+                    onNavigateToPenugasanGuru = { navController.navigate("admin_penugasan_guru") },
                     onAccountCreated = { navController.popBackStack() }
                 )
             }
@@ -386,27 +399,51 @@ fun MainScreen(
 
     // Notification Bottom Sheet
     if (showNotificationSheet) {
-        NotificationBottomSheet(
-            notifications = activeNotifications,
-            nowMillis = nowMillis,
-            onDismiss = {
-                markAllNotificationsAsRead()
-                showNotificationSheet = false
-            },
-            onClearAll = {
-                clearAllNotifications()
-            },
-            onNotificationClick = { item ->
-                markAllNotificationsAsRead()
-                showNotificationSheet = false
-                if (item.type == NotificationType.AI || item.type == NotificationType.AI_RUNNING) {
-                    navController.navigate("ai") {
-                        popUpTo("beranda") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+        if (userRole == UserRole.GURU || userRole == UserRole.WALI_KELAS) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    markAllNotificationsAsRead()
+                    showNotificationSheet = false
+                },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                com.example.kawansekolah.ui.feature_wali.WaliNotifikasiScreen(
+                    notifications = activeNotifications,
+                    nowMillis = nowMillis,
+                    onNotificationClick = { item ->
+                        markAllNotificationsAsRead()
+                        showNotificationSheet = false
+                    },
+                    onBackClick = {
+                        markAllNotificationsAsRead()
+                        showNotificationSheet = false
+                    }
+                )
+            }
+        } else {
+            NotificationBottomSheet(
+                notifications = activeNotifications,
+                nowMillis = nowMillis,
+                onDismiss = {
+                    markAllNotificationsAsRead()
+                    showNotificationSheet = false
+                },
+                onClearAll = {
+                    clearAllNotifications()
+                },
+                onNotificationClick = { item ->
+                    markAllNotificationsAsRead()
+                    showNotificationSheet = false
+                    if (item.type == NotificationType.AI || item.type == NotificationType.AI_RUNNING) {
+                        navController.navigate("ai") {
+                            popUpTo("beranda") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
     }
 }

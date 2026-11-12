@@ -22,9 +22,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.kawansekolah.data.model.Subject
 import com.example.kawansekolah.data.model.Task
+import com.example.kawansekolah.data.model.TeacherProfile
+import com.example.kawansekolah.data.model.User
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.data.repository.AcademicRepository
+import com.example.kawansekolah.data.repository.AuthRepository
 import com.example.kawansekolah.ui.components.*
 import com.example.kawansekolah.ui.theme.*
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun BerandaScreen(
@@ -122,6 +128,7 @@ fun BerandaScreen(
                     }
 
                     item {
+                        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             SecondaryButton(
                                 text = "Unggah nilai CSV",
@@ -129,22 +136,47 @@ fun BerandaScreen(
                                 icon = Icons.Default.UploadFile
                             )
 
-                            PrimaryButton(
-                                text = "Input nilai",
-                                onClick = { navController.navigate("guru_input") },
-                                icon = Icons.Default.Edit
-                            )
+                            if (isDark) {
+                                SecondaryButton(
+                                    text = "Input nilai",
+                                    onClick = { navController.navigate("guru_input") },
+                                    icon = Icons.Default.Edit
+                                )
+                            } else {
+                                PrimaryButton(
+                                    text = "Input nilai",
+                                    onClick = { navController.navigate("guru_input") },
+                                    icon = Icons.Default.Edit
+                                )
+                            }
                         }
                     }
                 }
 
                 UserRole.WALI_KELAS -> {
-                    // WALI KELAS BERANDA (Image 6)
+                    // WALI KELAS BERANDA (Clean Zero State)
                     item {
+                        var teacherUser by remember { mutableStateOf<User?>(null) }
+                        var teacherProfile by remember { mutableStateOf<TeacherProfile?>(null) }
+
+                        LaunchedEffect(Unit) {
+                            val uid = AuthRepository.getCurrentUserUid() ?: Firebase.auth.currentUser?.uid
+                            if (uid != null) {
+                                teacherUser = AuthRepository.getUserProfile(uid)
+                                teacherProfile = AcademicRepository.getTeacherProfile(uid)
+                            }
+                        }
+
+                        val className = remember(teacherProfile, teacherUser) {
+                            val cls = teacherProfile?.classesTaught?.firstOrNull { it != "-" && it.isNotBlank() }
+                                ?: teacherUser?.className.orEmpty()
+                            if (cls.isNotBlank()) "KELAS WALI $cls" else "KELAS WALI"
+                        }
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1C64F2))
                         ) {
                             Column(modifier = Modifier.padding(20.dp)) {
                                 Row(
@@ -152,37 +184,53 @@ fun BerandaScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("KELAS WALI IX A", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                                        Text("30 siswa", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 4.dp))
+                                    Text(
+                                        text = className,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White.copy(alpha = 0.85f)
+                                    )
+                                    Badge(containerColor = Color.White.copy(alpha = 0.2f)) {
+                                        Text(
+                                            text = "0 siswa",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("82,41", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                Text("rata-rata semua mapel", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                            }
-                        }
-                    }
 
-                    item {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFFEF3C7),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("6 siswa nilai belum lengkap", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
-                                    Text("Dari 4 mata pelajaran di kelasmu", fontSize = 11.sp, color = Color(0xFFB45309))
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "0,00",
+                                        fontSize = 36.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Badge(containerColor = Color.White.copy(alpha = 0.2f)) {
+                                        Text(
+                                            text = "+0,0",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
                                 }
-                                Badge(containerColor = Color(0xFFF59E0B)) {
-                                    Text("PERLU DICEK", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
-                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "rata-rata semua mapel",
+                                    fontSize = 12.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
                             }
                         }
                     }
@@ -191,13 +239,27 @@ fun BerandaScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("TOPIK LEMAH KELAS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("IPA • Sistem ekskresi", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("Rata-rata kelas 74 • lihat Insight Kelas", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Assessment,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Belum ada data nilai kelas untuk diringkas",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                         }
                     }
@@ -211,7 +273,7 @@ fun BerandaScreen(
                 }
 
                 UserRole.ORANG_TUA -> {
-                    // ORANG TUA BERANDA (Image 8)
+                    // ORANG TUA BERANDA
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -225,7 +287,7 @@ fun BerandaScreen(
                             ) {
                                 Column {
                                     Text("Anak", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("Andi Pratama • Kelas IX A", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("Siswa Scolarsia", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
                                 Icon(Icons.Default.ChevronRight, contentDescription = null)
                             }
@@ -250,23 +312,7 @@ fun BerandaScreen(
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("82,87", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-                        }
-                    }
-
-                    item {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFEFF6FF),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.3f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("DUKUNGAN", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF1D4ED8))
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Matematika • Pythagoras • nilai 68", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E40AF))
-                                Text("Ajak anak berlatih dengan contoh bertahap.", fontSize = 11.sp, color = Color(0xFF2563EB))
+                                Text("0,00", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                         }
                     }
@@ -280,7 +326,7 @@ fun BerandaScreen(
                 }
 
                 else -> {
-                    // SISWA BERANDA (Image 7)
+                    // SISWA BERANDA
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -295,61 +341,12 @@ fun BerandaScreen(
                                 ) {
                                     Text("RATA-RATA SEMESTER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                                     Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                                        Text("3,2", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 4.dp))
+                                        Text("0,0", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 4.dp))
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("82,87", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                Text("4 mata pelajaran • Semester Ganjil", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                            }
-                        }
-                    }
-
-                    item {
-                        Text("Mata pelajaran", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    }
-
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Matematika", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Badge(containerColor = Color(0xFFDCFCE7)) { Text("KUAT  86,40", color = Color(0xFF15803D), fontSize = 10.sp, fontWeight = FontWeight.Bold) }
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("IPA", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Badge(containerColor = Color(0xFFFEF3C7)) { Text("LATIHAN  74,00", color = Color(0xFFB45309), fontSize = 10.sp, fontWeight = FontWeight.Bold) }
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Bahasa Inggris", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Badge(containerColor = Color(0xFFDCFCE7)) { Text("KUAT  88,20", color = Color(0xFF15803D), fontSize = 10.sp, fontWeight = FontWeight.Bold) }
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Bahasa Indonesia", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Badge(containerColor = MaterialTheme.colorScheme.surfaceVariant) { Text("BELUM LENGKAP", fontSize = 10.sp, fontWeight = FontWeight.Bold) }
-                                }
-                            }
-                        }
-                    }
-
-                    item {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFFEF3C7),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("FOKUS BELAJAR", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF92400E))
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("Matematika • Pythagoras perlu latihan", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFB45309))
+                                Text("0,00", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Text("Mata pelajaran • Semester Ganjil", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                             }
                         }
                     }

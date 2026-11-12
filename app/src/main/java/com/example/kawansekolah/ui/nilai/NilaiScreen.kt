@@ -48,6 +48,15 @@ fun NilaiScreen(
     onNotificationClick: () -> Unit = {},
     academicViewModel: AcademicViewModel = viewModel()
 ) {
+    if (userRole == UserRole.WALI_KELAS) {
+        com.example.kawansekolah.ui.feature_wali.WaliRaporSiswaScreen(
+            studentName = userName,
+            studentNis = "",
+            subjectGrades = emptyList()
+        )
+        return
+    }
+
     val uiState by academicViewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var expandedSubjectId by remember { mutableStateOf<String?>("subj_matematika_9") }

@@ -4,8 +4,7 @@
     <style name="Theme.Scolarsia" parent="android:Theme.Material.Light.NoActionBar">
         <!-- Cold Start Splash Window Background -->
         <item name="android:windowBackground">@drawable/splash_background1</item>
-        <item name="android:statusBarColor">#3B82F6</item>
-        <item name="android:navigationBarColor">#EFF6FF</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

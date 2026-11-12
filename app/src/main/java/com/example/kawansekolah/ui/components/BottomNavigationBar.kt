@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.ui.theme.*
 
 @Composable
 fun BottomNavigationBar(
@@ -56,64 +55,71 @@ fun BottomNavigationBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = CardBorderStroke
-        )
-
-        NavigationBar(
-            containerColor = ColorWhite,
-            contentColor = TextMuted,
-            windowInsets = WindowInsets(0, 0, 0, 0),
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
-            tonalElevation = 0.dp
+                .navigationBarsPadding()
         ) {
-            items.forEach { (title, icon, route) ->
-                val isSelected = currentRoute == route
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = title,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = title,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1
-                        )
-                    },
-                    selected = isSelected,
-                    alwaysShowLabel = true,
-                    onClick = {
-                        if (currentRoute != route) {
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = false
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                tonalElevation = 0.dp
+            ) {
+                items.forEach { (title, icon, route) ->
+                    val isSelected = currentRoute == route
+                    NavigationBarItem(
+                        icon = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = title,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = title,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1
+                            )
+                        },
+                        selected = isSelected,
+                        alwaysShowLabel = true,
+                        onClick = {
+                            if (currentRoute != route) {
+                                navController.navigate(route) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = false
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = false
                                 }
-                                launchSingleTop = true
-                                restoreState = false
                             }
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        unselectedIconColor = TextMuted,
-                        unselectedTextColor = TextMuted,
-                        indicatorColor = PrimarySoftBlue
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     )
-                )
+                }
             }
         }
     }

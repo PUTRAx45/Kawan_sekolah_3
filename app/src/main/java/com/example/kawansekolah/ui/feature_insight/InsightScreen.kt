@@ -88,38 +88,15 @@ fun InsightScreen(
             title = { Text("AI Auto-Insight Pembelajaran", fontWeight = FontWeight.Bold) }
         )
 
-        if (isWali) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Akses Ditolak (Khusus Guru Mapel)",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Fitur AI Auto-Insight ini dikhususkan untuk Guru Mata Pelajaran. Sebagai Wali Kelas, Anda dapat memantau rekapitulasi nilai melalui menu Rekap Kelas.",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
-        } else {
+    if (isWali || userRole.contains("WALI", ignoreCase = true)) {
+        com.example.kawansekolah.ui.feature_wali.WaliInsightScreen(
+            classAverage = "0,00",
+            subjectPerformance = emptyList(),
+            studentsNeedingAttention = emptyList(),
+            onRefresh = { fetchInsightData() }
+        )
+        return
+    } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),

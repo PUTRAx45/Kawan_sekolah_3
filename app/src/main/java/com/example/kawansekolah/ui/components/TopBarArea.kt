@@ -20,7 +20,7 @@ import com.example.kawansekolah.R
 
 @Composable
 fun TopBarArea(
-    userName: String = "Budi Santoso",
+    userName: String = "Pengguna",
     unreadCount: Int = 0,
     onNotificationClick: () -> Unit = {}
 ) {

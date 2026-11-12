@@ -22,7 +22,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AdminDetailAkunScreen(
     userName: String = "Rani Puspitasari",
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onNavigateToPenugasanGuru: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -109,12 +110,13 @@ fun AdminDetailAkunScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            OutlinedButton(
-                onClick = { /* Ubah peran */ },
+            Button(
+                onClick = onNavigateToPenugasanGuru,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
             ) {
-                Text("Ubah peran", fontWeight = FontWeight.Bold)
+                Text("Penugasan & Data Pengajar", fontWeight = FontWeight.Bold, color = Color.White)
             }
 
             OutlinedButton(

@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AdminPenggunaScreen(
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToDaftarAccount: () -> Unit = {}
+    onNavigateToDaftarAccount: () -> Unit = {},
+    onNavigateToPenugasanGuru: () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableIntStateOf(0) }
@@ -141,15 +142,31 @@ fun AdminPenggunaScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(
-                onClick = onNavigateToDaftarAccount,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("+ Daftarkan akun", fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = onNavigateToPenugasanGuru,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Penugasan Guru", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+
+                Button(
+                    onClick = onNavigateToDaftarAccount,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Daftarkan Akun", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

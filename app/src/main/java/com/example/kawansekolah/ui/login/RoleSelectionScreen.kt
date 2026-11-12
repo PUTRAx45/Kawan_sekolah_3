@@ -176,8 +176,8 @@ private fun RoleCardItem(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = ColorWhite,
-        border = BorderStroke(1.dp, CardBorderStroke),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp
     ) {
         Row(

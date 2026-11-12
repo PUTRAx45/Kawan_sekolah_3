@@ -40,5 +40,6 @@ object StatisticsCalculator {
             highest = calculateHighest(scores),
             lowest = calculateLowest(scores)
         )
+
     }
 }
