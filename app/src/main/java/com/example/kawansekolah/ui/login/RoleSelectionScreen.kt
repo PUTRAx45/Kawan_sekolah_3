@@ -64,7 +64,7 @@ fun RoleSelectionScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.mipmap.logo_scolarsia),
+                    painter = painterResource(id = R.drawable.logo_scolarsia),
                     contentDescription = "Logo Scolarsia",
                     modifier = Modifier.size(50.dp)
                 )

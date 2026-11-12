@@ -7,18 +7,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kawansekolah.BuildConfig
 import com.example.kawansekolah.R
 import kotlinx.coroutines.delay
 
@@ -26,6 +30,8 @@ import kotlinx.coroutines.delay
 fun SplashScreen(
     onTimeout: () -> Unit
 ) {
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         delay(2500L)
         onTimeout()
@@ -47,7 +53,25 @@ fun SplashScreen(
         )
     }
 
-    val androidVersionName = try { Build.VERSION.RELEASE ?: "14" } catch (_: Exception) { "14" }
+    val appVersion = remember {
+        try {
+            BuildConfig.VERSION_NAME
+        } catch (_: Exception) {
+            try {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "2.0.3"
+            } catch (_: Exception) {
+                "2.0.3"
+            }
+        }
+    }
+
+    val androidVersion = remember {
+        try {
+            Build.VERSION.RELEASE ?: "16"
+        } catch (_: Exception) {
+            "16"
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -115,7 +139,7 @@ fun SplashScreen(
 
                     Box(
                         modifier = Modifier
-                            .size(14.dp), // Fixed Container so outer row height never fluctuates
+                            .size(14.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
@@ -130,9 +154,9 @@ fun SplashScreen(
         }
 
         Text(
-            text = "Versi 2.0.3 • Android $androidVersionName",
-            fontSize = 11.sp,
-            color = Color.White.copy(alpha = 0.75f),
+            text = "Versi $appVersion • Android $androidVersion",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.7f),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 32.dp)
