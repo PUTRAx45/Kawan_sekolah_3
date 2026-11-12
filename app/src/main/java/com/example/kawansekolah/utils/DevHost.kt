@@ -81,9 +81,9 @@ object DevHost {
         } else if (isAdbMode()) {
             "📱 MODE ADB REVERSE ($currentHost):\n" +
             "Pastikan port forwarding ADB sudah diaktifkan di komputer:\n" +
-            "• adb reverse tcp:3000 tcp:3000\n" +
-            "• adb reverse tcp:8080 tcp:8080\n" +
-            "• adb reverse tcp:9099 tcp:9099"
+            "• adb reverse tcp:8080 tcp:8080 (Backend REST API)\n" +
+            "• adb reverse tcp:8081 tcp:8081 (Firestore Emulator)\n" +
+            "• adb reverse tcp:9099 tcp:9099 (Auth Emulator)"
         } else if (isPhysicalDevice()) {
             "🌐 MODE LAN WI-FI ($currentHost):\n" +
             "Aplikasi terhubung ke laptop via IP '$currentHost'. Pastikan HP dan laptop berada dalam satu jaringan Wi-Fi."
