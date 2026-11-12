@@ -56,9 +56,7 @@ fun InputNilaiScreen(
     val students = remember(selectedClass.id) { ScoreRepository.getDummyStudentsList(selectedClass.id) }
 
     val scoreInputs = remember(selectedClass.id) {
-        mutableStateMapOf<String, String>().apply {
-            students.forEach { put(it.id, "85") }
-        }
+        mutableStateMapOf<String, String>()
     }
 
     var statusMessage by remember { mutableStateOf("") }
