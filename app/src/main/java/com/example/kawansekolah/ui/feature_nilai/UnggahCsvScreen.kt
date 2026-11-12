@@ -56,17 +56,7 @@ fun UnggahCsvScreen(
     val assignedTeacherId = selectedSubject.teacherId
     val canUpload = AccessPolicy.canUploadCsv(userRole, userId, assignedTeacherId)
 
-    var csvInputText by remember {
-        mutableStateOf(
-            """
-            studentId, studentName, score, scoreType
-            std_1, Ahmad Budi, 88.5, KUIS_HARIAN
-            std_2, Siti Rahma, 95.0, KUIS_HARIAN
-            std_3, Dewi Lestari, 150.0, KUIS_HARIAN
-            std_4, Fajar Pratama, 80.0, KARAKTER
-            """.trimIndent()
-        )
-    }
+    var csvInputText by remember { mutableStateOf("") }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
