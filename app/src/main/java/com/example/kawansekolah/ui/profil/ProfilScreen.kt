@@ -9,17 +9,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kawansekolah.ui.components.ScolarsiaAvatar
+import com.example.kawansekolah.ui.components.StatusBadge
+import com.example.kawansekolah.ui.components.StatusBadgeType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,29 +36,15 @@ fun ProfilScreen(
     onPrivasiNotifikasiClick: () -> Unit = {},
     onPerangkatSesiClick: () -> Unit = {}
 ) {
-    if (userRole.equals("WALI_KELAS", ignoreCase = true) || userRole.equals("HOMEROOM_TEACHER", ignoreCase = true) || userRole.contains("WALI", ignoreCase = true)) {
-        com.example.kawansekolah.ui.feature_wali.WaliProfilScreen(
-            onLogoutClick = onLogoutClick,
-            onUbahKataSandiClick = onUbahKataSandiClick,
-            onPrivasiNotifikasiClick = onPrivasiNotifikasiClick,
-            onPerangkatSesiClick = onPerangkatSesiClick
-        )
-        return
-    }
-
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     val roleLabel = when (userRole.uppercase()) {
         "GURU", "TEACHER", "GURU_MAPEL" -> "Guru mapel • Matematika, IPA"
         "WALI_KELAS", "HOMEROOM_TEACHER" -> "Guru mapel • Wali kelas IX A"
         "ORANG_TUA", "PARENT" -> "Orang tua / wali • Scolarsia"
+        "ADMIN" -> "Administrator Sekolah"
         else -> "Siswa • Kelas IX A"
     }
-
-    val initials = if (userName.isNotBlank()) {
-        val parts = userName.trim().split(" ")
-        if (parts.size >= 2) "${parts[0].take(1)}${parts[1].take(1)}".uppercase() else parts[0].take(2).uppercase()
-    } else "US"
 
     Column(
         modifier = Modifier
@@ -64,14 +54,19 @@ fun ProfilScreen(
             .navigationBarsPadding()
     ) {
         TopAppBar(
-            title = { Text("Profil saya", fontWeight = FontWeight.Bold) }
+            title = {
+                Text(
+                    text = "Profil saya",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
         )
 
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Profile Card Header
@@ -84,47 +79,43 @@ fun ProfilScreen(
                     modifier = Modifier.padding(20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = initials,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
+                    ScolarsiaAvatar(initials = userName, size = 56.dp)
 
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = userName,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = roleLabel,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(top = 2.dp)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                            modifier = Modifier.padding(top = 2.dp),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = userEmail,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
             }
 
-            // Academic Info Section
-            Text("Informasi akademik", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Academic Info Section Header
+            Text(
+                text = "Informasi akademik",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -133,29 +124,59 @@ fun ProfilScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Class, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = Icons.Default.Class,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Jenjang & kelas", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("SMP • IX A, IX B", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = "Jenjang & kelas",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "SMP • IX A, IX B",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = Icons.Default.MenuBook,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Mata pelajaran", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("Matematika • IPA", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = "Mata pelajaran",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Matematika • IPA",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
             }
 
-            // Security & Privacy Section
-            Text("Keamanan & privasi akun", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Security & Privacy Section Header
+            Text(
+                text = "Keamanan & privasi akun",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -198,7 +219,7 @@ fun ProfilScreen(
             ) {
                 Text(
                     text = "Akses nilai siswa mengikuti kewenangan dan relasi akun.",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(12.dp)
                 )
@@ -216,10 +237,22 @@ fun ProfilScreen(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Keluar dari akun", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(
+                    text = "Keluar dari akun",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
+
+            // Extra Bottom Padding to prevent cutoff on large font scales
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 
@@ -230,15 +263,14 @@ fun ProfilScreen(
             title = {
                 Text(
                     text = "Keluar dari akun?",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             text = {
                 Text(
                     text = "Kamu perlu masuk lagi untuk melihat nilai.",
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -253,7 +285,12 @@ fun ProfilScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                 ) {
-                    Text("Keluar", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Keluar",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
@@ -264,7 +301,12 @@ fun ProfilScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Batal", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Batal",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             },
             shape = RoundedCornerShape(20.dp)
@@ -287,22 +329,40 @@ private fun ProfileMenuRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+        )
 
         Spacer(modifier = Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            Text(text = subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
         if (badgeText != null) {
-            Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                Text(badgeText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 4.dp))
-            }
+            StatusBadge(type = StatusBadgeType.INFO, customText = badgeText)
             Spacer(modifier = Modifier.width(8.dp))
         }
 
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
