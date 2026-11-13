@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.ui.theme.*
 
 @Composable
 fun RoleSelectionScreen(
@@ -42,7 +41,7 @@ fun RoleSelectionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundMuted)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -60,7 +59,7 @@ fun RoleSelectionScreen(
                 modifier = Modifier
                     .size(76.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(PrimaryBlue),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -76,7 +75,7 @@ fun RoleSelectionScreen(
                 text = "Scolarsia",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkText
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -85,13 +84,13 @@ fun RoleSelectionScreen(
                 text = "Masuk sebagai",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkText
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Text(
                 text = "Silakan pilih status akun Anda",
                 fontSize = 12.sp,
-                color = TextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp)
             )
 
@@ -115,8 +114,8 @@ fun RoleSelectionScreen(
                 title = "Wali kelas",
                 subtitle = "Rekapitulasi nilai kelas wali",
                 badgeLetter = "W",
-                badgeColor = PrimarySoftBlue,
-                badgeTextColor = PrimaryBlue,
+                badgeColor = MaterialTheme.colorScheme.primaryContainer,
+                badgeTextColor = MaterialTheme.colorScheme.primary,
                 onClick = { onRoleSelected(UserRole.WALI_KELAS) }
             )
 
@@ -127,8 +126,8 @@ fun RoleSelectionScreen(
                 title = "Siswa",
                 subtitle = "Lihat nilai & rekomendasi belajar",
                 badgeLetter = "S",
-                badgeColor = SuccessGreenBg,
-                badgeTextColor = SuccessGreen,
+                badgeColor = Color(0xFFDEF7EC),
+                badgeTextColor = Color(0xFF0E9F6E),
                 onClick = { onRoleSelected(UserRole.SISWA) }
             )
 
@@ -151,7 +150,7 @@ fun RoleSelectionScreen(
                 text = "Admin sekolah? Daftarkan sekolah",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clickable { onAdminClick() }
                     .padding(8.dp)
@@ -208,12 +207,12 @@ private fun RoleCardItem(
                     text = title,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkText
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = subtitle,
                     fontSize = 11.sp,
-                    color = TextMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -221,7 +220,7 @@ private fun RoleCardItem(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = TextMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         }

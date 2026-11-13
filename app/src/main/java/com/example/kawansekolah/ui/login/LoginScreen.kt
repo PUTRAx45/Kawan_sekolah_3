@@ -31,7 +31,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.User
 import com.example.kawansekolah.data.model.UserRole
-import com.example.kawansekolah.ui.theme.PrimaryBlue
 import com.example.kawansekolah.ui.theme.TextMuted
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -133,16 +132,16 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Blue Scolarsia Badge Logo
+            // Scolarsia Badge Logo
             Box(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(PrimaryBlue),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.mipmap.logo_scolarsia),
+                    painter = painterResource(id = R.drawable.logo_scolarsia),
                     contentDescription = "Logo Scolarsia",
                     modifier = Modifier.size(54.dp)
                 )
@@ -161,13 +160,13 @@ fun LoginScreen(
             Surface(
                 modifier = Modifier.padding(top = 6.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFEFF6FF)
+                color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
                     text = roleTitle,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }
@@ -190,16 +189,20 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Field 1: Email / NISN / HP (Initial State Empty "", Placeholder #9CA3AF)
+            // Field 1: Email / NISN / HP
             OutlinedTextField(
                 value = identifierInput,
                 onValueChange = { identifierInput = it },
                 label = { Text(fieldLabel) },
                 placeholder = { Text(emailPlaceholder, fontSize = 12.sp, color = TextMuted) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryBlue,
-                    focusedLabelColor = PrimaryBlue,
-                    cursorColor = PrimaryBlue
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    cursorColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -208,7 +211,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Field 2: Password (Initial State Empty "", Placeholder "1234567")
+            // Field 2: Password
             OutlinedTextField(
                 value = passwordInput,
                 onValueChange = {
@@ -221,14 +224,18 @@ fun LoginScreen(
                 label = { Text("Kata sandi") },
                 placeholder = { Text(passwordPlaceholder, fontSize = 12.sp, color = TextMuted) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryBlue,
-                    focusedLabelColor = PrimaryBlue,
-                    cursorColor = PrimaryBlue
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    cursorColor = MaterialTheme.colorScheme.primary
                 ),
                 trailingIcon = {
                     val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Icon(imageVector = icon, contentDescription = null)
+                        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -260,7 +267,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Primary Blue Button "Masuk"
+            // Primary Button "Masuk"
             Button(
                 onClick = {
                     errorMessage = ""
@@ -272,7 +279,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 enabled = authUiState !is AuthUiState.Loading
             ) {
                 if (authUiState is AuthUiState.Loading) {
@@ -297,7 +304,7 @@ fun LoginScreen(
                 text = "← Ganti peran",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clickable { onBackToRoleSelection() }
                     .padding(8.dp)
