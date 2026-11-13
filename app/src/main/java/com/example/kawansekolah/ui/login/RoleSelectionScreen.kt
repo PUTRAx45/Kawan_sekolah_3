@@ -114,8 +114,8 @@ fun RoleSelectionScreen(
                 title = "Wali kelas",
                 subtitle = "Rekapitulasi nilai kelas wali",
                 badgeLetter = "W",
-                badgeColor = MaterialTheme.colorScheme.primaryContainer,
-                badgeTextColor = MaterialTheme.colorScheme.primary,
+                badgeColor = Color(0xFFDBEAFE),
+                badgeTextColor = Color(0xFF1D4ED8),
                 onClick = { onRoleSelected(UserRole.WALI_KELAS) }
             )
 
