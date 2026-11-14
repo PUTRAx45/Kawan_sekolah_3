@@ -50,32 +50,34 @@ object FirebaseEmulatorHelper {
     ) {
         if (!useEmulator || isEmulatorConfigured) return
 
+        val targetHost = host.ifBlank { "10.0.2.2" }
+
         try {
-            val targetHost = host.ifBlank { "10.0.2.2" }
             val activeProjectId = try { FirebaseApp.getInstance().options.projectId } catch (_: Exception) { "Unknown" }
             Log.i("FirebaseEmulator", "🔥 Firebase SDK Project ID aktif: '$activeProjectId'")
 
             if (isPhysicalDevice()) {
                 Log.w(
                     "FirebaseEmulator",
-                    "⚠️ Aplikasi berjalan di PERANGKAT FISIK (${Build.MANUFACTURER} ${Build.MODEL}). Target Host: $targetHost"
+                    "⚠️ HP FISIK DETECTED (${Build.MANUFACTURER} ${Build.MODEL}). Menghubungkan ke $targetHost:8080 (Firestore) & $targetHost:9099 (Auth)..."
                 )
             } else {
-                Log.d("FirebaseEmulator", "📱 Aplikasi berjalan di Android Emulator (${Build.MODEL}). Target Host: $targetHost")
+                Log.d("FirebaseEmulator", "📱 ANDROID EMULATOR DETECTED (${Build.MODEL}). Menghubungkan ke $targetHost:8080 (Firestore) & $targetHost:9099 (Auth)...")
             }
 
             Firebase.firestore.firestoreSettings = firestoreSettings {
                 setLocalCacheSettings(memoryCacheSettings { })
             }
-            Firebase.firestore.useEmulator(targetHost, 8081)
-            Log.d("FirebaseEmulator", "✅ Firestore emulator terhubung ke $targetHost:8081")
+            Firebase.firestore.useEmulator(targetHost, 8080)
+            Log.d("FirebaseEmulator", "✅ Firestore emulator terhubung ke $targetHost:8080")
 
             Firebase.auth.useEmulator(targetHost, 9099)
             Log.d("FirebaseEmulator", "✅ Auth emulator terhubung ke $targetHost:9099")
 
             isEmulatorConfigured = true
         } catch (e: Exception) {
-            Log.e("FirebaseEmulator", "❌ Gagal terhubung ke emulator: ${e.message}")
+            val deviceType = if (isPhysicalDevice()) "HP Fisik" else "Android Emulator"
+            Log.e("FirebaseEmulator", "❌ Gagal terhubung ke Firebase Emulator pada $deviceType di host '$targetHost': ${e.message}")
         }
     }
 }

@@ -469,8 +469,44 @@ Kembalikan respon DALAM FORMAT JSON VALID:
   }
 });
 
+// Endpoint Health Check: GET /health
+app.get('/health', async (req, res) => {
+  let authStatus = 'OK';
+  let firestoreStatus = 'OK';
+
+  try {
+    await admin.auth().listUsers(1);
+  } catch (e) {
+    authStatus = `ERROR: ${e.message}`;
+  }
+
+  try {
+    await admin.firestore().collection('health').doc('check').get();
+  } catch (e) {
+    firestoreStatus = `ERROR: ${e.message}`;
+  }
+
+  const isHealthy = authStatus === 'OK' && firestoreStatus === 'OK';
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? 'UP' : 'DEGRADED',
+    timestamp: new Date().toISOString(),
+    services: {
+      backend: 'UP',
+      firebaseAuthEmulator: authStatus,
+      firestoreEmulator: firestoreStatus
+    },
+    environment: {
+      port: PORT,
+      projectId: process.env.GCLOUD_PROJECT || 'demo-kawansekolah',
+      authHost: process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
+      firestoreHost: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080'
+    }
+  });
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", async () => {
+const server = app.listen(PORT, "0.0.0.0", async () => {
   const warmUpStatus = await warmUpFirebaseAdmin();
   const openRouterStatus = await validateOpenRouterKey();
 
@@ -481,4 +517,15 @@ app.listen(PORT, "0.0.0.0", async () => {
   console.log(`🔥 Firebase Warm-up: ${warmUpStatus}`);
   console.log(`🔑 OpenRouter Key Status: ${openRouterStatus}`);
   console.log(`======================================================`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ ERROR: Port ${PORT} sudah digunakan oleh proses lain.`);
+    console.error(`💡 Silakan jalankan 'stop-all.bat' atau hentikan proses di port ${PORT}.\n`);
+    process.exit(1);
+  } else {
+    console.error('\n❌ Server Error:', err.message, '\n');
+    process.exit(1);
+  }
 });
