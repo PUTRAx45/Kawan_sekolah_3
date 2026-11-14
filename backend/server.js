@@ -469,6 +469,37 @@ Kembalikan respon DALAM FORMAT JSON VALID:
   }
 });
 
+const { seedData, clearDummyData } = require('./seed-manager');
+
+// Endpoints Dev Seed (Active ONLY if NODE_ENV !== 'production')
+app.post('/dev/seed', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ status: 'error', message: 'Endpoint /dev/seed tidak tersedia di mode produksi.' });
+  }
+
+  try {
+    await seedData();
+    return res.json({ status: 'success', message: '✅ Data dummy berhasil diisi ke Auth & Firestore emulator!' });
+  } catch (e) {
+    console.error('❌ Error /dev/seed:', e);
+    return res.status(500).json({ status: 'error', message: e.message || 'Gagal mengisi data dummy.' });
+  }
+});
+
+app.post('/dev/seed-clear', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ status: 'error', message: 'Endpoint /dev/seed-clear tidak tersedia di mode produksi.' });
+  }
+
+  try {
+    await clearDummyData();
+    return res.json({ status: 'success', message: '✅ Data dummy berhasil dibersihkan dari emulator!' });
+  } catch (e) {
+    console.error('❌ Error /dev/seed-clear:', e);
+    return res.status(500).json({ status: 'error', message: e.message || 'Gagal menghapus data dummy.' });
+  }
+});
+
 // Endpoint Health Check: GET /health
 app.get('/health', async (req, res) => {
   let authStatus = 'OK';
