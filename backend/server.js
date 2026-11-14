@@ -471,6 +471,157 @@ Kembalikan respon DALAM FORMAT JSON VALID:
 
 const { seedData, clearDummyData } = require('./seed-manager');
 
+// Middleware Admin Verification
+async function verifyAdminToken(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    if (process.env.NODE_ENV !== 'production' || isEmulatorMode) {
+      req.user = { uid: 'admin_01', role: 'admin' };
+      return next();
+    }
+    return res.status(401).json({ status: 'error', message: 'Token otentikasi admin diperlukan.' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;
+    next();
+  } catch (e) {
+    if (process.env.NODE_ENV !== 'production' || isEmulatorMode) {
+      req.user = { uid: 'admin_01', role: 'admin' };
+      return next();
+    }
+    return res.status(401).json({ status: 'error', message: 'Token admin tidak valid: ' + e.message });
+  }
+}
+
+// 1. POST /admin/users - Tambah Akun oleh Admin via Firebase Admin SDK
+app.post('/admin/users', verifyAdminToken, async (req, res) => {
+  try {
+    const { name, email, pass, role, schoolLevel, grade, className, studentIds } = req.body;
+
+    if (!name || !email || !pass) {
+      return res.status(400).json({ status: 'error', message: 'Nama, email, dan kata sandi wajib diisi.' });
+    }
+
+    let authUser = null;
+    try {
+      authUser = await admin.auth().createUser({
+        email: email.trim(),
+        password: pass,
+        displayName: name.trim()
+      });
+    } catch (authErr) {
+      if (authErr.code === 'auth/email-already-exists') {
+        authUser = await admin.auth().getUserByEmail(email.trim());
+      } else {
+        throw authErr;
+      }
+    }
+
+    const uid = authUser.uid;
+    const normRole = (role || 'siswa').toLowerCase();
+
+    try {
+      await admin.auth().setCustomUserClaims(uid, { role: normRole });
+    } catch (_) {}
+
+    const userDocData = {
+      uid: uid,
+      sekolahId: 'sekolah_01',
+      nama: name.trim(),
+      namaLengkap: name.trim(),
+      email: email.trim(),
+      role: normRole,
+      schoolLevel: schoolLevel || 'SMP',
+      grade: grade || 9,
+      className: className || '9-A',
+      studentIds: studentIds || [],
+      aktif: true,
+      wajibGantiSandi: true,
+      createdAt: Date.now()
+    };
+
+    await admin.firestore().collection('pengguna').doc(uid).set(userDocData, { merge: true });
+    await admin.firestore().collection('users').doc(uid).set(userDocData, { merge: true });
+
+    return res.json({
+      status: 'success',
+      message: `✅ Akun ${role || 'pengguna'} '${name}' berhasil dibuat!`,
+      data: userDocData
+    });
+  } catch (error) {
+    console.error('❌ Error /admin/users:', error);
+    return res.status(500).json({ status: 'error', message: error.message || 'Gagal membuat akun.' });
+  }
+});
+
+// 2. PUT /admin/users/:uid - Update / Toggle Status Aktif Akun oleh Admin
+app.put('/admin/users/:uid', verifyAdminToken, async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { name, role, aktif } = req.body;
+
+    const updateData = { updatedAt: Date.now() };
+    if (name !== undefined) updateData.nama = name;
+    if (role !== undefined) updateData.role = role.toLowerCase();
+    if (aktif !== undefined) updateData.aktif = Boolean(aktif);
+
+    await admin.firestore().collection('pengguna').doc(uid).set(updateData, { merge: true });
+    await admin.firestore().collection('users').doc(uid).set(updateData, { merge: true });
+
+    return res.json({
+      status: 'success',
+      message: `✅ Akun ${uid} berhasil diperbarui!`
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 3. POST /admin/users/:uid/reset-password - Reset Kata Sandi Akun oleh Admin
+app.post('/admin/users/:uid/reset-password', verifyAdminToken, async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { newPassword } = req.body;
+    const passToSet = newPassword || '1g2u3r4u';
+
+    await admin.auth().updateUser(uid, { password: passToSet });
+
+    await admin.firestore().collection('pengguna').doc(uid).set({ wajibGantiSandi: true }, { merge: true });
+    await admin.firestore().collection('users').doc(uid).set({ wajibGantiSandi: true }, { merge: true });
+
+    return res.json({
+      status: 'success',
+      message: `✅ Kata sandi akun ${uid} berhasil di-reset menjadi '${passToSet}'!`
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 4. DELETE /admin/users/:uid - Hapus Akun oleh Admin
+app.delete('/admin/users/:uid', verifyAdminToken, async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    try {
+      await admin.auth().deleteUser(uid);
+    } catch (_) {}
+
+    await admin.firestore().collection('pengguna').doc(uid).delete();
+    await admin.firestore().collection('users').doc(uid).delete();
+
+    return res.json({
+      status: 'success',
+      message: `✅ Akun ${uid} berhasil dihapus dari sistem.`
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 // Endpoints Dev Seed (Active ONLY if NODE_ENV !== 'production')
 app.post('/dev/seed', async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
