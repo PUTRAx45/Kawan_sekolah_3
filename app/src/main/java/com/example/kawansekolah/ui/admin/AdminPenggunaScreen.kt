@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,10 +19,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kawansekolah.data.model.Pengguna
+import com.example.kawansekolah.ui.components.EmptyStateView
+import com.example.kawansekolah.ui.theme.PrimaryBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPenggunaScreen(
+    userList: List<Pengguna> = emptyList(),
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToDaftarAccount: () -> Unit = {},
     onNavigateToPenugasanGuru: () -> Unit = {}
@@ -29,13 +34,21 @@ fun AdminPenggunaScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableIntStateOf(0) }
 
-    val userList = remember {
-        listOf(
-            Triple("Rani Puspitasari", "Guru • Matematika", "Aktif"),
-            Triple("Andi Pratama", "Siswa • IX A", "Aktif"),
-            Triple("Budi Santoso", "Orang tua • Anak: Andi", "Aktif"),
-            Triple("Siti Aulia", "Siswa • IX A", "Aktif")
-        )
+    val filterOptions = listOf("Semua", "Guru", "Wali kelas", "Siswa", "Orang tua", "Admin")
+
+    val filteredList = remember(userList, searchQuery, selectedFilter) {
+        userList.filter { user ->
+            val matchesSearch = searchQuery.isBlank() || user.nama.contains(searchQuery, ignoreCase = true) || user.email.contains(searchQuery, ignoreCase = true)
+            val matchesFilter = when (selectedFilter) {
+                1 -> user.role.equals("guru", ignoreCase = true) || user.role.equals("TEACHER", ignoreCase = true)
+                2 -> user.role.equals("wali_kelas", ignoreCase = true) || user.role.equals("WALI_KELAS", ignoreCase = true)
+                3 -> user.role.equals("siswa", ignoreCase = true) || user.role.equals("STUDENT", ignoreCase = true)
+                4 -> user.role.equals("orang_tua", ignoreCase = true) || user.role.equals("PARENT", ignoreCase = true)
+                5 -> user.role.equals("admin", ignoreCase = true) || user.role.equals("ADMIN", ignoreCase = true)
+                else -> true
+            }
+            matchesSearch && matchesFilter
+        }
     }
 
     Column(
@@ -46,7 +59,11 @@ fun AdminPenggunaScreen(
             .navigationBarsPadding()
     ) {
         TopAppBar(
-            title = { Text("Pengguna", fontWeight = FontWeight.Bold) }
+            title = { Text("Pengguna", fontWeight = FontWeight.Bold) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         Column(
@@ -66,12 +83,12 @@ fun AdminPenggunaScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Filter Chips (Semua, Guru, Siswa, Orang tua)
+            // Filter Chips Horizontal (Semua, Guru, Wali kelas, Siswa, Orang tua, Admin)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                listOf("Semua", "Guru", "Siswa", "Orang tua").forEachIndexed { idx, label ->
+                filterOptions.take(4).forEachIndexed { idx, label ->
                     FilterChip(
                         selected = selectedFilter == idx,
                         onClick = { selectedFilter = idx },
@@ -90,50 +107,63 @@ fun AdminPenggunaScreen(
             ) {
                 Text("Akun terdaftar", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                    Text("420 akun", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 4.dp))
+                    Text("${filteredList.size} akun", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 4.dp))
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(userList.size) { idx ->
-                    val (name, desc, status) = userList[idx]
-                    val initials = name.split(" ").map { it.take(1) }.take(2).joinToString("")
+            if (filteredList.isEmpty()) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyStateView(
+                        title = "Belum ada akun pengguna terdaftar",
+                        description = "Daftar akun pengguna sekolah akan tampil secara otomatis di sini setelah ditambahkan.",
+                        icon = Icons.Default.Group
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(filteredList.size) { idx ->
+                        val user = filteredList[idx]
+                        val initials = if (user.nama.isNotBlank()) user.nama.split(" ").map { it.take(1) }.take(2).joinToString("") else "US"
 
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToDetail(name) },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onNavigateToDetail(user.nama) },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFEFF6FF)),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(initials, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
-                            }
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEFF6FF)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(initials, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                                }
 
-                            Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
 
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(desc, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(user.nama, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("${user.role} • ${user.email}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
 
-                            Badge(containerColor = Color(0xFFDCFCE7)) {
-                                Text(status, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF166534), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                Badge(containerColor = if (user.aktif) Color(0xFFDCFCE7) else Color(0xFFF1F5F9)) {
+                                    Text(if (user.aktif) "Aktif" else "Nonaktif", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (user.aktif) Color(0xFF166534) else Color(0xFF64748B), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                }
                             }
                         }
                     }
@@ -161,7 +191,7 @@ fun AdminPenggunaScreen(
                     onClick = onNavigateToDaftarAccount,
                     modifier = Modifier.weight(1f).height(48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
