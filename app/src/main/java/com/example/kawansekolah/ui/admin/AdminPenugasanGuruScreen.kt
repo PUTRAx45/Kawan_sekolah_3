@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kawansekolah.data.model.TeacherProfile
 import com.example.kawansekolah.data.repository.AcademicRepository
-import com.example.kawansekolah.data.repository.AuthRepository
 import com.example.kawansekolah.ui.theme.CardBorderStroke
 import com.example.kawansekolah.ui.theme.PrimaryBlue
 import com.example.kawansekolah.ui.theme.PrimarySoftBlue
@@ -38,31 +37,29 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPenugasanGuruScreen(
-    initialTeacherEmail: String = "guru12@scolarsia.ac.id",
+    initialTeacherEmail: String = "",
     onBackClick: () -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
 
     // Registered teacher account email options
     val teacherEmailOptions = remember {
-        listOf(
+        mutableStateListOf(
             "guru12@scolarsia.ac.id",
-            "rani.p@scolarsia.sch.id",
-            "walikelas12@scolarsia.ac.id",
-            "guru_matematika@scolarsia.sch.id"
+            "walikelas12@scolarsia.ac.id"
         )
     }
 
     var selectedEmail by remember { mutableStateOf(initialTeacherEmail) }
     var expandedEmailDropdown by remember { mutableStateOf(false) }
 
-    var fullName by remember { mutableStateOf("Rani Puspitasari, S.Pd.") }
-    var schoolName by remember { mutableStateOf("SMP Scolarsia 1") }
+    var fullName by remember { mutableStateOf("") }
+    var schoolName by remember { mutableStateOf("") }
     var selectedLevel by remember { mutableStateOf("SMP") }
 
-    // 4 Class Slots State
-    var slot0 by remember { mutableStateOf("9-A") }
-    var slot1 by remember { mutableStateOf("9-B") }
+    // 4 Class Slots State Initialized Empty (-)
+    var slot0 by remember { mutableStateOf("-") }
+    var slot1 by remember { mutableStateOf("-") }
     var slot2 by remember { mutableStateOf("-") }
     var slot3 by remember { mutableStateOf("-") }
 
@@ -91,33 +88,20 @@ fun AdminPenugasanGuruScreen(
 
     // Auto-load profile data when selected teacher email changes
     LaunchedEffect(selectedEmail) {
-        statusMessage = ""
-        val targetUid = when {
-            selectedEmail.contains("rani") -> "guru_01"
-            selectedEmail.contains("walikelas") || selectedEmail.contains("wali") -> "wali_01"
-            else -> "guru_01"
-        }
-        val existingProfile = AcademicRepository.getTeacherProfile(targetUid)
-        if (existingProfile != null) {
-            fullName = existingProfile.fullName.ifBlank { fullName }
-            schoolName = existingProfile.schoolName.ifBlank { schoolName }
-            selectedLevel = existingProfile.schoolLevel.ifBlank { selectedLevel }
-            val classes = existingProfile.classesTaught.filter { it != "-" && it.isNotBlank() }
-            slot0 = classes.getOrNull(0) ?: "-"
-            slot1 = classes.getOrNull(1) ?: "-"
-            slot2 = classes.getOrNull(2) ?: "-"
-            slot3 = classes.getOrNull(3) ?: "-"
-        }
-    }
-
-    // Reset default slot suggestions when level changes
-    LaunchedEffect(selectedLevel) {
-        if (selectedLevel == "SD" && (slot0 == "9-A" || slot0 == "11-A")) {
-            slot0 = "5-A"; slot1 = "5-B"; slot2 = "-"; slot3 = "-"
-        } else if (selectedLevel == "SMA" && (slot0 == "9-A" || slot0 == "5-A")) {
-            slot0 = "11-A"; slot1 = "11-B"; slot2 = "-"; slot3 = "-"
-        } else if (selectedLevel == "SMP" && (slot0 == "5-A" || slot0 == "11-A")) {
-            slot0 = "9-A"; slot1 = "9-B"; slot2 = "-"; slot3 = "-"
+        if (selectedEmail.isNotBlank()) {
+            statusMessage = ""
+            val targetUid = if (selectedEmail.contains("wali")) "wali_01" else "guru_01"
+            val existingProfile = AcademicRepository.getTeacherProfile(targetUid)
+            if (existingProfile != null) {
+                fullName = existingProfile.fullName
+                schoolName = existingProfile.schoolName
+                selectedLevel = existingProfile.schoolLevel.ifBlank { selectedLevel }
+                val classes = existingProfile.classesTaught.filter { it != "-" && it.isNotBlank() }
+                slot0 = classes.getOrNull(0) ?: "-"
+                slot1 = classes.getOrNull(1) ?: "-"
+                slot2 = classes.getOrNull(2) ?: "-"
+                slot3 = classes.getOrNull(3) ?: "-"
+            }
         }
     }
 
@@ -135,7 +119,11 @@ fun AdminPenugasanGuruScreen(
                 IconButton(onClick = onBackClick) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         Column(
@@ -186,9 +174,10 @@ fun AdminPenugasanGuruScreen(
                     value = selectedEmail,
                     onValueChange = { selectedEmail = it },
                     label = { Text("Pilih Akun / Email Guru Terdaftar") },
+                    placeholder = { Text("Pilih atau ketik email guru") },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEmailDropdown) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -199,7 +188,7 @@ fun AdminPenugasanGuruScreen(
                 ) {
                     teacherEmailOptions.forEach { optEmail ->
                         DropdownMenuItem(
-                            text = { Text(optEmail, fontSize = 13.sp) },
+                            text = { Text(optEmail) },
                             onClick = {
                                 selectedEmail = optEmail
                                 expandedEmailDropdown = false
@@ -209,187 +198,187 @@ fun AdminPenugasanGuruScreen(
                 }
             }
 
-            // 2. Input Nama Lengkap & Gelar
+            // 2. Nama Lengkap Guru
             OutlinedTextField(
                 value = fullName,
                 onValueChange = { fullName = it },
-                label = { Text("Nama Lengkap & Gelar") },
+                label = { Text("Nama Lengkap & Gelar Guru") },
+                placeholder = { Text("Contoh: Rani Puspitasari, S.Pd.") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // 3. Input Nama Sekolah
+            // 3. Nama Sekolah
             OutlinedTextField(
                 value = schoolName,
                 onValueChange = { schoolName = it },
                 label = { Text("Nama Sekolah") },
+                placeholder = { Text("Contoh: SMP Scolarsia 1") },
                 leadingIcon = { Icon(Icons.Default.Business, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // 4. Segmented Selector "Pilih Jenjang Sekolah"
-            Column(modifier = Modifier.fillMaxWidth()) {
+            // 4. Pilih Jenjang Sekolah
+            Text(
+                text = "Pilih Jenjang Sekolah:",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("SD", "SMP", "SMA").forEach { level ->
+                    FilterChip(
+                        selected = selectedLevel == level,
+                        onClick = { selectedLevel = level },
+                        label = { Text(level) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // 5. Kelas yang Diampu (4 Slot)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "Pilih Jenjang Sekolah:",
+                    text = "Kelas yang Diampu",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Text(
+                    text = "(Maksimal 4 slot)",
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
+            }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf("SD", "SMP", "SMA").forEach { level ->
-                        FilterChip(
-                            selected = selectedLevel == level,
-                            onClick = { selectedLevel = level },
-                            label = { Text(level, fontWeight = FontWeight.Bold) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+            // 4 Slot Horizontal Dropdown Boxes
+            val slots = listOf(slot0, slot1, slot2, slot3)
+            val updateSlot: (Int, String) -> Unit = { idx, value ->
+                when (idx) {
+                    0 -> slot0 = value
+                    1 -> slot1 = value
+                    2 -> slot2 = value
+                    3 -> slot3 = value
                 }
             }
 
-            // 5. 4 Kotak Dropdown Terpisah dalam 1 Baris untuk "Kelas yang Diampu (Maksimal 4 slot)"
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Kelas yang Diampu",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "(Maksimal 4 slot)",
-                        fontSize = 11.sp,
-                        color = TextMuted
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val slots = listOf(slot0, slot1, slot2, slot3)
-                val updateSlot: (Int, String) -> Unit = { idx, value ->
-                    when (idx) {
-                        0 -> slot0 = value
-                        1 -> slot1 = value
-                        2 -> slot2 = value
-                        3 -> slot3 = value
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    slots.forEachIndexed { idx, value ->
-                        Box(modifier = Modifier.weight(1f)) {
-                            Surface(
-                                onClick = { expandedSlot = idx },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(1.dp, if (value != "-") PrimaryBlue else CardBorderStroke)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Class,
-                                            contentDescription = null,
-                                            tint = if (value != "-") PrimaryBlue else TextMuted,
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                        Text(
-                                            text = "Slot ${idx + 1}",
-                                            fontSize = 10.sp,
-                                            color = TextMuted
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = value,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (value != "-") PrimaryBlue else TextMuted,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowDropDown,
-                                            contentDescription = null,
-                                            tint = TextMuted,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            DropdownMenu(
-                                expanded = expandedSlot == idx,
-                                onDismissRequest = { expandedSlot = null },
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                slots.forEachIndexed { idx, value ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        Surface(
+                            onClick = { expandedSlot = idx },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, if (value != "-") PrimaryBlue else CardBorderStroke)
+                        ) {
+                            Column(
                                 modifier = Modifier
-                                    .width(140.dp)
-                                    .heightIn(max = 260.dp)
+                                    .padding(vertical = 10.dp, horizontal = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("- (Kosong)", fontSize = 12.sp, color = TextMuted) },
-                                    onClick = {
-                                        updateSlot(idx, "-")
-                                        expandedSlot = null
-                                    }
-                                )
-
-                                currentOptions.forEach { classOpt ->
-                                    DropdownMenuItem(
-                                        text = { Text(classOpt, fontSize = 13.sp, fontWeight = if (value == classOpt) FontWeight.Bold else FontWeight.Normal) },
-                                        onClick = {
-                                            updateSlot(idx, classOpt)
-                                            expandedSlot = null
-                                        }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Class,
+                                        contentDescription = null,
+                                        tint = if (value != "-") PrimaryBlue else TextMuted,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = "Slot ${idx + 1}",
+                                        fontSize = 10.sp,
+                                        color = TextMuted
                                     )
                                 }
 
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = value,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (value != "-") PrimaryBlue else TextMuted,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = TextMuted,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Dropdown Menu per Slot
+                        DropdownMenu(
+                            expanded = expandedSlot == idx,
+                            onDismissRequest = { expandedSlot = null },
+                            modifier = Modifier
+                                .width(140.dp)
+                                .heightIn(max = 280.dp)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("- (Kosong)", fontSize = 12.sp, color = TextMuted) },
+                                onClick = {
+                                    updateSlot(idx, "-")
+                                    expandedSlot = null
+                                }
+                            )
+
+                            currentOptions.forEach { classOpt ->
                                 DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.Add, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("+ Tambah kelas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-                                        }
-                                    },
+                                    text = { Text(classOpt, fontSize = 13.sp, fontWeight = if (value == classOpt) FontWeight.Bold else FontWeight.Normal) },
                                     onClick = {
-                                        activeSlotForCustomClass = idx
+                                        updateSlot(idx, classOpt)
                                         expandedSlot = null
-                                        customClassInput = ""
-                                        showCustomClassDialog = true
                                     }
                                 )
                             }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Add, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("+ Tambah kelas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                                    }
+                                },
+                                onClick = {
+                                    activeSlotForCustomClass = idx
+                                    expandedSlot = null
+                                    customClassInput = ""
+                                    showCustomClassDialog = true
+                                }
+                            )
                         }
                     }
                 }
@@ -398,12 +387,12 @@ fun AdminPenugasanGuruScreen(
             if (statusMessage.isNotBlank()) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                    color = if (isError) MaterialTheme.colorScheme.errorContainer else Color(0xFFDCFCE7),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = statusMessage,
-                        color = if (isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = if (isError) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF166534),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(12.dp)
@@ -411,65 +400,63 @@ fun AdminPenugasanGuruScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Tombol "Simpan Data Pengajar"
+            // Save Button
+            val isFormValid = selectedEmail.isNotBlank() && fullName.isNotBlank() && schoolName.isNotBlank() && listOf(slot0, slot1, slot2, slot3).any { it != "-" && it.isNotBlank() }
+
             Button(
                 onClick = {
                     val classesList = listOf(slot0, slot1, slot2, slot3).filter { it != "-" && it.isNotBlank() }
-                    if (selectedEmail.isBlank() || fullName.isBlank() || schoolName.isBlank() || classesList.isEmpty()) {
+                    if (!isFormValid) {
+                        statusMessage = "⚠️ Mohon lengkapi email, nama, sekolah, dan pilih minimal 1 kelas!"
                         isError = true
-                        statusMessage = "❌ Mohon isi semua bidang dan tentukan minimal 1 kelas yang diampu!"
                     } else {
                         isSaving = true
-                        isError = false
                         statusMessage = ""
+                        isError = false
+
                         coroutineScope.launch {
                             try {
-                                val targetUid = when {
-                                    selectedEmail.contains("rani") -> "guru_01"
-                                    selectedEmail.contains("walikelas") || selectedEmail.contains("wali") -> "wali_01"
-                                    else -> AuthRepository.getCurrentUserUid() ?: "guru_01"
-                                }
-
+                                val targetUid = if (selectedEmail.contains("wali")) "wali_01" else "guru_01"
                                 val profile = TeacherProfile(
                                     teacherId = targetUid,
-                                    fullName = fullName.trim(),
-                                    schoolName = schoolName.trim(),
+                                    fullName = fullName,
+                                    schoolName = schoolName,
                                     schoolLevel = selectedLevel,
                                     classesTaught = classesList,
                                     profileComplete = true
                                 )
 
                                 AcademicRepository.saveTeacherProfile(profile)
-
                                 isSaving = false
-                                statusMessage = "✅ Data pengajar '${fullName.trim()}' berhasil disimpan ke Firestore! Guru sekarang dapat langsung menggunakan dashboard."
+                                isError = false
+                                statusMessage = "✅ Penugasan & Data Pengajar '$fullName' berhasil disimpan ke Firestore!"
                             } catch (e: Exception) {
                                 isSaving = false
                                 isError = true
-                                statusMessage = "❌ Gagal menyimpan data pengajar: ${e.message}"
+                                statusMessage = "❌ Gagal menyimpan data: ${e.message}"
                             }
                         }
                     }
                 },
+                enabled = isFormValid && !isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = !isSaving,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
-                    Text("Simpan Data Pengajar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Simpan Penugasan & Data Pengajar", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
     }
 
-    // Dialog Tambah Kelas Kustom
+    // Custom Class Input Dialog
     if (showCustomClassDialog) {
         AlertDialog(
             onDismissRequest = { showCustomClassDialog = false },
@@ -506,7 +493,7 @@ fun AdminPenugasanGuruScreen(
                         showCustomClassDialog = false
                     },
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                 ) {
                     Text("Tambah & Pilih", fontWeight = FontWeight.Bold)
                 }
