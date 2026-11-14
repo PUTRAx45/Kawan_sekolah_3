@@ -73,7 +73,7 @@ async function seedData() {
 
   // Koleksi: pengguna & users
   for (const u of DUMMY_USERS) {
-    val userDocData = {
+    const userDocData = {
       uid: u.uid,
       sekolahId: 'sekolah_01',
       nama: u.name,
@@ -164,7 +164,7 @@ async function clearDummyData() {
     try {
       await auth.deleteUser(u.uid);
       console.log(`  - Menghapus Auth dummy user: ${u.email}`);
-    } catch (_: Exception) {}
+    } catch (_) {}
   }
 
   console.log('✅ [SeedManager] Data dummy berhasil dibersihkan!');

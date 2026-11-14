@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kawansekolah.data.model.User
+import com.example.kawansekolah.data.model.UserRole
 import com.example.kawansekolah.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,36 +22,19 @@ class AuthViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> get() = _uiState
 
-    fun login(identifier: String, pass: String) {
-        if (identifier.isBlank() || pass.isBlank()) {
-            _uiState.value = AuthUiState.Error("Email/NIS dan kata sandi tidak boleh kosong")
-            return
-        }
-
+    fun login(
+        identifier: String,
+        pass: String,
+        expectedRole: UserRole = UserRole.SISWA,
+        context: Context? = null
+    ) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                val user = AuthRepository.loginWithEmailOrNis(identifier, pass)
+                val user = AuthRepository.loginWithEmailOrNis(identifier, pass, expectedRole, context)
                 _uiState.value = AuthUiState.Success(user)
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Gagal masuk. Periksa kembali akun Anda.")
-            }
-        }
-    }
-
-    fun registerTeacher(name: String, email: String, pass: String, inviteCode: String) {
-        if (name.isBlank() || email.isBlank() || pass.isBlank() || inviteCode.isBlank()) {
-            _uiState.value = AuthUiState.Error("Semua bidang dan Kode Undangan wajib diisi")
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.value = AuthUiState.Loading
-            try {
-                val teacher = AuthRepository.registerTeacher(name, email, pass, inviteCode)
-                _uiState.value = AuthUiState.Success(teacher)
-            } catch (e: Exception) {
-                _uiState.value = AuthUiState.Error(e.message ?: "Gagal mendaftarkan akun Guru")
             }
         }
     }

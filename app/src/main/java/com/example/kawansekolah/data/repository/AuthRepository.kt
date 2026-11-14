@@ -3,19 +3,20 @@ package com.example.kawansekolah.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.kawansekolah.BuildConfig
+import com.example.kawansekolah.data.model.FirestoreCollections
 import com.example.kawansekolah.data.model.User
+import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.utils.DeviceSessionManager
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -78,8 +79,16 @@ object AuthRepository {
         return try {
             var userDoc: User? = null
             val time = measureTimeMillis {
-                val snapshot = firestore.collection("users").document(uid).get().await()
-                userDoc = snapshot.toObject(User::class.java)
+                // Try pengguna collection first, fallback to users collection
+                val doc1 = firestore.collection(FirestoreCollections.PENGGUNA).document(uid).get().await()
+                if (doc1.exists()) {
+                    userDoc = doc1.toObject(User::class.java)
+                } else {
+                    val doc2 = firestore.collection("users").document(uid).get().await()
+                    if (doc2.exists()) {
+                        userDoc = doc2.toObject(User::class.java)
+                    }
+                }
             }
             if (BuildConfig.DEBUG) {
                 Log.d("LoginTiming", "[getUserProfile] Pengambilan dokumen users/{$uid} selesai dalam ${time}ms")
@@ -92,7 +101,23 @@ object AuthRepository {
         }
     }
 
-    suspend fun loginWithEmailOrNis(identifier: String, pass: String): User {
+    private fun normalizeRole(roleStr: String): String {
+        return when (roleStr.lowercase().trim()) {
+            "admin", "administrator" -> "ADMIN"
+            "guru", "teacher", "guru_mapel" -> "GURU"
+            "wali_kelas", "walikelas", "homeroom_teacher" -> "WALI_KELAS"
+            "siswa", "student" -> "SISWA"
+            "orang_tua", "orangtua", "parent" -> "ORANG_TUA"
+            else -> roleStr.uppercase()
+        }
+    }
+
+    suspend fun loginWithEmailOrNis(
+        identifier: String,
+        pass: String,
+        expectedRole: UserRole = UserRole.SISWA,
+        context: Context? = null
+    ): User {
         var loggedUser: User? = null
         val totalLoginTime = measureTimeMillis {
             try {
@@ -100,105 +125,64 @@ object AuthRepository {
                     val email = if (identifier.contains("@")) {
                         identifier.trim()
                     } else {
-                        "${identifier.trim()}@scolarsia.sch.id"
+                        "${identifier.trim()}@scolarsia.ac.id"
                     }
 
-                    // Stage 1: signInWithEmailAndPassword
-                    var uid = ""
-                    val activeProjectId = try { FirebaseApp.getInstance().options.projectId } catch (_: Exception) { "Unknown" }
-                    Log.i("FirebaseAuth", "🔥 Firebase SDK Project ID yang sedang dipakai saat login: '$activeProjectId'")
+                    // 1. Firebase Auth signInWithEmailAndPassword
+                    val signInResult = auth.signInWithEmailAndPassword(email, pass).await()
+                    val uid = signInResult.user?.uid ?: throw IllegalStateException("User ID tidak ditemukan pada Firebase Auth.")
 
-                    val signInTime = measureTimeMillis {
-                        val result = auth.signInWithEmailAndPassword(email, pass).await()
-                        uid = result.user?.uid ?: throw IllegalStateException("User ID tidak ditemukan")
-                    }
-                    if (BuildConfig.DEBUG) {
-                        Log.d("LoginTiming", "[signInWithEmailAndPassword] Selesai dalam ${signInTime}ms (Email/NIS: $email)")
+                    // 2. Fetch profile from Firestore
+                    val userProfile = getUserProfile(uid)
+                    if (userProfile == null) {
+                        auth.signOut()
+                        throw IllegalStateException("Akun belum didaftarkan oleh admin sekolah.")
                     }
 
-                    // Stage 2: Fetch User Document (with Auto-Provisioning Fallback)
-                    val user = getUserProfile(uid) ?: run {
-                        val inferredRole = when {
-                            email.contains("admin") -> "ADMIN"
-                            email.contains("walikelas") || email.contains("wali") -> "WALI_KELAS"
-                            email.contains("guru") -> "TEACHER"
-                            email.contains("orangtua") || email.contains("ortu") -> "PARENT"
-                            else -> "STUDENT"
-                        }
-                        val fallbackUser = User(
-                            uid = uid,
-                            name = if (email.contains("@scolarsia.sch.id")) "Siswa ${identifier.trim()}" else identifier.substringBefore("@"),
-                            email = email,
-                            role = inferredRole,
-                            teacherId = "guru_01"
-                        )
-                        try {
-                            firestore.collection("users").document(uid).set(fallbackUser).await()
-                        } catch (_: Exception) {}
-                        setCachedUser(fallbackUser)
-                        fallbackUser
+                    // 3. Verify Active Status
+                    if (!userProfile.aktif) {
+                        auth.signOut()
+                        throw IllegalStateException("Akun Anda nonaktif. Silakan hubungi administrator sekolah.")
                     }
 
-                    // Stage 3 & 4 & 5: Parallel fetching for related data
-                    coroutineScope {
-                        val teacherProfDeferred = async {
-                            if (user.role == "TEACHER" || user.role == "GURU") {
-                                measureTimeMillis { AcademicRepository.getTeacherProfile(uid) }
-                            } else 0L
-                        }
+                    // 4. Verify Expected Role
+                    val actualRoleNorm = normalizeRole(userProfile.role)
+                    val expectedRoleNorm = normalizeRole(expectedRole.name)
 
-                        val subjectsDeferred = async {
-                            measureTimeMillis { AcademicRepository.getAllSubjects() }
-                        }
-
-                        val gradesDeferred = async {
-                            measureTimeMillis { AcademicRepository.getGradesForStudentAndSubject(uid, "subj_matematika_9") }
-                        }
-
-                        val teacherTime = teacherProfDeferred.await()
-                        val subjectsTime = subjectsDeferred.await()
-                        val gradesTime = gradesDeferred.await()
-
-                        if (BuildConfig.DEBUG) {
-                            if (user.role == "TEACHER") Log.d("LoginTiming", "[getTeacherProfile] Selesai dalam ${teacherTime}ms")
-                            Log.d("LoginTiming", "[getSubjectsAndTopics] Selesai dalam ${subjectsTime}ms (Paralel)")
-                            Log.d("LoginTiming", "[getGrades] Selesai dalam ${gradesTime}ms (Paralel)")
-                        }
+                    if (actualRoleNorm != expectedRoleNorm) {
+                        auth.signOut()
+                        throw IllegalStateException("Akun ini bukan akun ${expectedRole.label}.")
                     }
 
-                    user
+                    // 5. Track device session in Firestore if context is available
+                    context?.let { ctx ->
+                        DeviceSessionManager.saveCurrentSession(ctx, uid)
+                    }
+
+                    setCachedUser(userProfile)
+                    userProfile
                 }
             } catch (e: FirebaseAuthInvalidUserException) {
-                val msg = if (BuildConfig.USE_EMULATOR) {
-                    "Akun / NISN tidak ditemukan di emulator Auth. Silakan gunakan kredensial resmi Scolarsia."
-                } else {
-                    "NIS/email atau kata sandi yang Anda masukkan salah."
-                }
-                throw IllegalStateException(msg)
+                throw IllegalStateException("Akun / NISN tidak ditemukan. Silakan periksa kembali.")
             } catch (e: FirebaseAuthInvalidCredentialsException) {
-                val msg = if (BuildConfig.USE_EMULATOR) {
-                    "Kata sandi yang Anda masukkan salah. Silakan periksa kembali."
-                } else {
-                    "NIS/email atau kata sandi yang Anda masukkan salah."
-                }
-                throw IllegalStateException(msg)
+                throw IllegalStateException("Kata sandi yang Anda masukkan salah.")
+            } catch (e: TimeoutCancellationException) {
+                throw IllegalStateException("Koneksi ke server Auth melebihi batas waktu (timeout). Silakan periksa koneksi internet/emulator.")
+            } catch (e: IllegalStateException) {
+                throw e
             } catch (e: Exception) {
-                // Offline / UI Preview Fallback Mode
+                // Fallback for emulator offline / dev mode
                 val cleanId = identifier.trim().lowercase()
                 val fallbackUser = when {
                     cleanId.contains("admin") -> User(uid = "admin_01", name = "Arif Setiawan", email = "admin12@scolarsia.ac.id", role = "ADMIN")
                     cleanId.contains("walikelas") || cleanId.contains("wali") -> User(uid = "wali_01", name = "Siti Aminah", email = "walikelas12@scolarsia.ac.id", role = "WALI_KELAS", className = "9-A")
                     cleanId.contains("guru") -> User(uid = "guru_01", name = "Budi Santoso", email = "guru12@scolarsia.ac.id", role = "GURU")
-                    cleanId.contains("orangtua") || cleanId.contains("ortu") -> User(uid = "ortu_01", name = "Bapak Ahmad", email = "orangtua12@scolarsia.ac.id", role = "ORANG_TUA", studentIds = listOf("std_01"))
-                    else -> User(uid = "std_01", name = "Ahmad Budi", email = "siswa12@scolarsia.ac.id", role = "SISWA", className = "9-A")
+                    cleanId.contains("orangtua") || cleanId.contains("ortu") -> User(uid = "ortu_01", name = "Bapak Ahmad", email = "orangtua12@scolarsia.ac.id", role = "ORANG_TUA", studentIds = listOf("siswa_01"))
+                    else -> User(uid = "siswa_01", name = "Ahmad Budi", email = "09231@scolarsia.ac.id", role = "SISWA", className = "9-A")
                 }
                 setCachedUser(fallbackUser)
                 loggedUser = fallbackUser
             }
-        }
-
-        if (BuildConfig.DEBUG) {
-            Log.d("LoginTiming", "[TOTAL_LOGIN] Total durasi alur login: ${totalLoginTime}ms")
         }
 
         return loggedUser ?: throw IllegalStateException("Gagal memuat profil pengguna")
@@ -208,42 +192,57 @@ object AuthRepository {
         name: String,
         email: String,
         pass: String,
-        inviteCode: String
+        schoolLevel: String,
+        grade: Int,
+        className: String,
+        context: Context
     ): User {
-        if (inviteCode.trim() != TEACHER_INVITE_CODE) {
-            throw IllegalArgumentException("Kode Undangan Guru tidak valid! (Gunakan: GURU2025)")
-        }
+        val secAuth = getSecondaryAuth(context)
+        val authRes = secAuth.createUserWithEmailAndPassword(email, pass).await()
+        val uid = authRes.user?.uid ?: throw IllegalStateException("Gagal mendaftarkan akun guru di Firebase Auth")
 
-        return try {
-            withTimeout(10_000L) {
-                val result = try {
-                    auth.createUserWithEmailAndPassword(email.trim(), pass).await()
-                } catch (e: FirebaseAuthUserCollisionException) {
-                    auth.signInWithEmailAndPassword(email.trim(), pass).await()
-                }
-                val uid = result.user?.uid ?: throw IllegalStateException("Gagal mendaftarkan akun Guru")
+        val newUser = User(
+            uid = uid,
+            name = name,
+            email = email,
+            role = "GURU",
+            schoolLevel = schoolLevel,
+            grade = grade,
+            className = className,
+            teacherId = uid,
+            aktif = true
+        )
 
-                val newTeacher = User(
-                    uid = uid,
-                    name = name.trim(),
-                    email = email.trim(),
-                    role = "GURU",
-                    teacherId = uid
-                )
+        firestore.collection("pengguna").document(uid).set(newUser).await()
+        firestore.collection("users").document(uid).set(newUser).await()
+        secAuth.signOut()
+        return newUser
+    }
 
-                firestore.collection("users").document(uid).set(newTeacher).await()
-                setCachedUser(newTeacher)
-                newTeacher
-            }
-        } catch (e: Exception) {
-            // UI Preview Fallback
-            User(
-                uid = "guru_new_${System.currentTimeMillis()}",
-                name = name.trim(),
-                email = email.trim(),
-                role = "GURU"
-            ).also { setCachedUser(it) }
-        }
+    suspend fun createParentAccount(
+        context: Context,
+        name: String,
+        email: String,
+        pass: String,
+        linkedStudentIds: List<String>
+    ): User {
+        val secAuth = getSecondaryAuth(context)
+        val authRes = secAuth.createUserWithEmailAndPassword(email, pass).await()
+        val uid = authRes.user?.uid ?: throw IllegalStateException("Gagal mendaftarkan akun Orang Tua di Firebase Auth")
+
+        val newUser = User(
+            uid = uid,
+            name = name,
+            email = email,
+            role = "ORANG_TUA",
+            studentIds = linkedStudentIds,
+            aktif = true
+        )
+
+        firestore.collection("pengguna").document(uid).set(newUser).await()
+        firestore.collection("users").document(uid).set(newUser).await()
+        secAuth.signOut()
+        return newUser
     }
 
     suspend fun createStudentAccount(
@@ -255,99 +254,25 @@ object AuthRepository {
         grade: Int,
         className: String
     ): User {
-        val currentTeacherUid = getCurrentUserUid()
-            ?: throw IllegalStateException("Harus login sebagai Guru untuk membuat akun Siswa")
-
-        if (!User.isValidLevelAndGrade(schoolLevel, grade)) {
-            throw IllegalArgumentException("Kombinasi jenjang '$schoolLevel' dan kelas $grade tidak valid! SD (1-6), SMP (7-9), SMA (10-12). SMK tidak didukung.")
-        }
-
         val secAuth = getSecondaryAuth(context)
-        val syntheticEmail = "${nis.trim()}@kawansekolah.local"
+        val syntheticEmail = "${nis.trim()}@scolarsia.ac.id"
+        val authRes = secAuth.createUserWithEmailAndPassword(syntheticEmail, pass).await()
+        val uid = authRes.user?.uid ?: throw IllegalStateException("Gagal mendaftarkan akun Siswa di Firebase Auth")
 
-        val result = try {
-            secAuth.createUserWithEmailAndPassword(syntheticEmail, pass).await()
-        } catch (e: FirebaseAuthUserCollisionException) {
-            secAuth.signInWithEmailAndPassword(syntheticEmail, pass).await()
-        }
-        val studentUid = result.user?.uid ?: throw IllegalStateException("Gagal membuat akun Siswa")
-
-        val studentUser = User(
-            uid = studentUid,
-            name = name.trim(),
+        val newUser = User(
+            uid = uid,
+            name = name,
             email = syntheticEmail,
-            role = "STUDENT",
-            teacherId = currentTeacherUid,
+            role = "SISWA",
             schoolLevel = schoolLevel,
             grade = grade,
-            className = className
+            className = className,
+            aktif = true
         )
 
-        firestore.collection("users").document(studentUid).set(studentUser).await()
-        setCachedUser(studentUser)
+        firestore.collection("pengguna").document(uid).set(newUser).await()
+        firestore.collection("users").document(uid).set(newUser).await()
         secAuth.signOut()
-        return studentUser
-    }
-
-    suspend fun createParentAccount(
-        context: Context,
-        name: String,
-        email: String,
-        pass: String,
-        linkedStudentIds: List<String>
-    ): User {
-        val currentTeacherUid = getCurrentUserUid()
-            ?: throw IllegalStateException("Harus login sebagai Guru untuk membuat akun Orang Tua")
-
-        val secAuth = getSecondaryAuth(context)
-        val result = try {
-            secAuth.createUserWithEmailAndPassword(email.trim(), pass).await()
-        } catch (e: FirebaseAuthUserCollisionException) {
-            secAuth.signInWithEmailAndPassword(email.trim(), pass).await()
-        }
-        val parentUid = result.user?.uid ?: throw IllegalStateException("Gagal membuat akun Orang Tua")
-
-        val parentUser = User(
-            uid = parentUid,
-            name = name.trim(),
-            email = email.trim(),
-            role = "PARENT",
-            teacherId = currentTeacherUid,
-            studentIds = linkedStudentIds
-        )
-
-        firestore.collection("users").document(parentUid).set(parentUser).await()
-        setCachedUser(parentUser)
-        secAuth.signOut()
-        return parentUser
-    }
-
-    suspend fun getStudentsForTeacher(teacherId: String): List<User> {
-        return try {
-            val snapshot = firestore.collection("users")
-                .whereEqualTo("role", "STUDENT")
-                .whereEqualTo("teacherId", teacherId)
-                .get()
-                .await()
-            val list = snapshot.toObjects(User::class.java)
-            list.forEach { setCachedUser(it) }
-            list
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    suspend fun getStudentsForParent(studentIds: List<String>): List<User> {
-        if (studentIds.isEmpty()) return emptyList()
-        return try {
-            coroutineScope {
-                val deferreds = studentIds.map { id ->
-                    async { getUserProfile(id) }
-                }
-                deferreds.awaitAll().filterNotNull()
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
+        return newUser
     }
 }

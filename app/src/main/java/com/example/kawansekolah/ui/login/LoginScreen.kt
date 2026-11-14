@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -267,13 +268,15 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val context = LocalContext.current
+
             // Primary Button "Masuk"
             Button(
                 onClick = {
                     errorMessage = ""
                     val inputEmail = identifierInput.ifBlank { defaultDemoEmail }
                     val inputPass = passwordInput.ifBlank { "1g2u3r4u" }
-                    authViewModel.login(inputEmail, inputPass)
+                    authViewModel.login(inputEmail, inputPass, selectedRole, context)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
