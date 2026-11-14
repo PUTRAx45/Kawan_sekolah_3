@@ -18,6 +18,7 @@ import com.example.kawansekolah.utils.NotificationHelper
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -160,12 +161,14 @@ class AiChatViewModel : ViewModel() {
                 )
 
                 val responseText = try {
-                    withTimeout(10_000L) {
+                    withTimeout(30_000L) {
                         val res = AiRepository.fetchAiInsight(req)
-                        res.data?.aiRecommendation ?: ""
+                        res.data?.aiRecommendation ?: "Gagal mendapatkan respon AI."
                     }
-                } catch (_: Exception) {
-                    "Analisis AI Scolarsia untuk $studentName ($subjectName):\nNilai akhir berbobot adalah ${Math.round(finalScore)}. Sub-materi terlemah yang memerlukan bimbingan khusus adalah '$weakest'. Disarankan melakukan latihan soal bertahap 15 menit per hari."
+                } catch (e: TimeoutCancellationException) {
+                    "⏳ Waktu permintaan AI melebihi 30 detik (Timeout). Silakan coba beberapa saat lagi."
+                } catch (e: Exception) {
+                    "⚠️ Gagal terhubung ke server AI Backend (http://10.0.2.2:3000): ${e.message ?: "Server offline"}"
                 }
 
                 val aiMsg = ChatMessage(
