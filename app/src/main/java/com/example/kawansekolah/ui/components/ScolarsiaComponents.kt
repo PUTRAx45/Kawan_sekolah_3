@@ -536,7 +536,59 @@ fun NavyPeriodeCard(
     }
 }
 
-// 12. Score Grid Item & Bar/Topik
+// 12. Dark Profile Header Card
+@Composable
+fun DarkProfileHeaderCard(
+    title: String,
+    subtitle: String,
+    email: String,
+    initials: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = NavyContainer)
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ScolarsiaAvatar(
+                initials = initials,
+                size = 56.dp,
+                variant = AvatarVariant.SOLID_BLUE
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ColorWhite
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = ColorWhite.copy(alpha = 0.85f),
+                    modifier = Modifier.padding(top = 2.dp),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = email,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = ColorWhite.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+// 13. Score Grid Item & Bar/Topik
 @Composable
 fun ScoreGridItem(
     label: String,
@@ -608,7 +660,7 @@ fun TopicProgressBar(
     }
 }
 
-// 13. Link Row Item
+// 14. Link Row Item
 @Composable
 fun LinkRowItem(
     title: String,
@@ -672,7 +724,7 @@ fun LinkRowItem(
     }
 }
 
-// 14. User Row Item
+// 15. User Row Item
 @Composable
 fun UserRowItem(
     name: String,
@@ -718,7 +770,7 @@ fun UserRowItem(
     }
 }
 
-// 15. Student Row Item
+// 16. Student Row Item
 @Composable
 fun StudentRowItem(
     name: String,
@@ -777,7 +829,7 @@ fun StudentRowItem(
     }
 }
 
-// 16. Setting Row Item
+// 17. Setting Row Item
 @Composable
 fun SettingRowItem(
     title: String,
@@ -838,7 +890,7 @@ fun SettingRowItem(
     }
 }
 
-// 17. Labeled TextField
+// 18. Labeled TextField
 @Composable
 fun LabeledTextField(
     value: String,
@@ -877,7 +929,7 @@ fun LabeledTextField(
     )
 }
 
-// 18. White Rounded Card
+// 19. White Rounded Card
 @Composable
 fun ScolarsiaCard(
     modifier: Modifier = Modifier,
@@ -899,7 +951,7 @@ fun ScolarsiaCard(
     }
 }
 
-// 19. Empty State View
+// 20. Empty State View
 @Composable
 fun EmptyStateView(
     title: String = "Belum ada data",
