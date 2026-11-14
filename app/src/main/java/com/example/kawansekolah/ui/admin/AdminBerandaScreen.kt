@@ -1,29 +1,39 @@
 package com.example.kawansekolah.ui.admin
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kawansekolah.ui.components.EmptyStateView
+import com.example.kawansekolah.ui.components.LinkRowItem
 import com.example.kawansekolah.ui.components.TopBarArea
+import com.example.kawansekolah.ui.theme.*
 
 @Composable
 fun AdminBerandaScreen(
-    userName: String = "Pak Arif",
+    userName: String = "Admin Sekolah",
+    schoolName: String = "Scolarsia",
     unreadCount: Int = 0,
+    totalUsers: Int = 0,
+    totalGuru: Int = 0,
+    totalSiswa: Int = 0,
+    totalOrtu: Int = 0,
+    totalKelas: Int = 0,
+    activities: List<String> = emptyList(),
     onNotificationClick: () -> Unit = {},
     onNavigateToPengguna: () -> Unit = {},
     onNavigateToAkademik: () -> Unit = {}
@@ -46,11 +56,11 @@ fun AdminBerandaScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Blue Summary Card
+            // Blue Hero Summary Card (#1C64F2)
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = PrimaryBlue)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(
@@ -58,15 +68,34 @@ fun AdminBerandaScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("SISWA AKTIF", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                        Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                            Text("26 guru", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 4.dp))
+                        Text(
+                            text = "STATISTIK PENGGUNA",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorWhite.copy(alpha = 0.85f)
+                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = ColorWhite.copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                text = "$totalGuru guru",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorWhite,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    Text("384 siswa", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(
+                        text = "$totalUsers Total",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorWhite
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -75,92 +104,87 @@ fun AdminBerandaScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("KELAS", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-                            Text("18", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text("GURU", fontSize = 10.sp, color = ColorWhite.copy(alpha = 0.7f))
+                            Text("$totalGuru", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorWhite)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("MAPEL", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-                            Text("12", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text("SISWA", fontSize = 10.sp, color = ColorWhite.copy(alpha = 0.7f))
+                            Text("$totalSiswa", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorWhite)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("ORTU", fontSize = 10.sp, color = ColorWhite.copy(alpha = 0.7f))
+                            Text("$totalOrtu", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorWhite)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("KELAS", fontSize = 10.sp, color = ColorWhite.copy(alpha = 0.7f))
+                            Text("$totalKelas", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorWhite)
                         }
                     }
                 }
             }
 
-            // Quick Access Section
-            Text("Akses cepat", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Quick Access Section ("Akses Cepat")
+            Text(
+                text = "Akses cepat",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToPengguna() },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            LinkRowItem(
+                title = "Kelola pengguna",
+                subtitle = "Daftarkan dan atur akun sekolah",
+                icon = Icons.Default.Group,
+                onClick = onNavigateToPengguna
+            )
+
+            LinkRowItem(
+                title = "Data akademik",
+                subtitle = "Atur kelas, mapel, dan bobot",
+                icon = Icons.Default.School,
+                onClick = onNavigateToAkademik
+            )
+
+            // Recent Activity / System Log Section
+            Text(
+                text = "Aktivitas terbaru",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (activities.isEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, CardBorderStroke)
                 ) {
-                    Icon(Icons.Default.Group, contentDescription = null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Kelola pengguna", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Daftarkan dan atur akun sekolah", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    EmptyStateView(
+                        title = "Belum ada aktivitas",
+                        description = "Belum ada aktivitas atau data pengguna terdaftar.",
+                        icon = Icons.Default.Inbox,
+                        modifier = Modifier.padding(12.dp)
+                    )
                 }
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToAkademik() },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, CardBorderStroke)
                 ) {
-                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Data akademik", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Atur kelas, mapel, dan bobot", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        activities.forEachIndexed { idx, act ->
+                            Text(
+                                text = act,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (idx < activities.size - 1) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                            }
+                        }
                     }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
-
-            // Recent Activity Section
-            Text("Aktivitas terbaru", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            ) {
-                Text(
-                    text = "Bobot diperbarui • Kelas IX A ditambahkan",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(14.dp)
-                )
-            }
-
-            // Account Summary Section
-            Text("Ringkasan akun", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            ) {
-                Text(
-                    text = "26 guru • 384 siswa • 310 orang tua aktif",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(14.dp)
-                )
             }
         }
     }

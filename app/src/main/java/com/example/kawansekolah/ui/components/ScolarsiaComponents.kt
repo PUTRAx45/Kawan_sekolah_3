@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,7 +123,7 @@ fun ScolarsiaOutlineButton(
     SecondaryButton(text = text, onClick = onClick, modifier = modifier, enabled = enabled, icon = icon)
 }
 
-// 3. Danger Button (Transparent, Border #FCA5A5, #E02424 SemiBold)
+// 3. Danger Button (White, Border #FCA5A5, #E02424 SemiBold)
 @Composable
 fun DangerButton(
     text: String,
@@ -139,7 +141,7 @@ fun DangerButton(
         enabled = enabled,
         border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.Transparent,
+            containerColor = Color.White,
             contentColor = DangerRed
         )
     ) {
@@ -546,7 +548,7 @@ fun ScoreGridItem(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        border = BorderStroke(1.dp, CardBorderStroke)
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -606,7 +608,237 @@ fun TopicProgressBar(
     }
 }
 
-// 13. Labeled TextField
+// 13. Link Row Item
+@Composable
+fun LinkRowItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, CardBorderStroke)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(PrimarySoftBlue),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+// 14. User Row Item
+@Composable
+fun UserRowItem(
+    name: String,
+    roleAndSubject: String,
+    statusText: String = "Aktif",
+    avatarVariant: AvatarVariant = AvatarVariant.SOFT_BLUE,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick ?: {},
+        enabled = onClick != null,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, CardBorderStroke)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ScolarsiaAvatar(initials = name, size = 42.dp, variant = avatarVariant)
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = roleAndSubject,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            StatusBadge(type = StatusBadgeType.AKTIF, customText = statusText)
+        }
+    }
+}
+
+// 15. Student Row Item
+@Composable
+fun StudentRowItem(
+    name: String,
+    nis: String,
+    score: Double? = null,
+    isComplete: Boolean = true,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick ?: {},
+        enabled = onClick != null,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, CardBorderStroke)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ScolarsiaAvatar(initials = name, size = 42.dp, variant = AvatarVariant.SOFT_BLUE)
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "NIS $nis",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                StatusBadge(
+                    type = if (isComplete) StatusBadgeType.LENGKAP else StatusBadgeType.BELUM_LENGKAP
+                )
+
+                if (score != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (score > 0) String.format(java.util.Locale.getDefault(), "%.1f", score) else "-",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+// 16. Setting Row Item
+@Composable
+fun SettingRowItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    badgeText: String? = null
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(PrimarySoftBlue),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = PrimaryBlue,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        if (badgeText != null) {
+            StatusBadge(type = StatusBadgeType.INFO, customText = badgeText)
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
+// 17. Labeled TextField
 @Composable
 fun LabeledTextField(
     value: String,
@@ -645,7 +877,7 @@ fun LabeledTextField(
     )
 }
 
-// 14. White Rounded Card
+// 18. White Rounded Card
 @Composable
 fun ScolarsiaCard(
     modifier: Modifier = Modifier,
@@ -667,7 +899,7 @@ fun ScolarsiaCard(
     }
 }
 
-// 15. Empty State View
+// 19. Empty State View
 @Composable
 fun EmptyStateView(
     title: String = "Belum ada data",
@@ -688,13 +920,13 @@ fun EmptyStateView(
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(BackgroundMuted),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = TextMuted,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -703,8 +935,7 @@ fun EmptyStateView(
 
         Text(
             text = title,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
@@ -713,7 +944,7 @@ fun EmptyStateView(
 
         Text(
             text = description,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             lineHeight = 16.sp
