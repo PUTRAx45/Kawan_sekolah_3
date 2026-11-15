@@ -2,19 +2,20 @@ package com.example.kawansekolah.data.model
 
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
+import com.google.firebase.firestore.PropertyName
 
 @IgnoreExtraProperties
 data class User(
-    val uid: String = "",
-    val name: String = "",
-    val email: String = "",
-    val role: String = "STUDENT",
-    val teacherId: String = "",
-    val studentIds: List<String> = emptyList(),
-    val schoolLevel: String = "SMP",
-    val grade: Int = 9,
-    val className: String = "9-A",
-    val aktif: Boolean = true
+    @get:PropertyName("uid") @set:PropertyName("uid") var uid: String = "",
+    @get:PropertyName("nama") @set:PropertyName("nama") var name: String = "",
+    @get:PropertyName("email") @set:PropertyName("email") var email: String = "",
+    @get:PropertyName("role") @set:PropertyName("role") var role: String = "SISWA",
+    @get:PropertyName("teacherId") @set:PropertyName("teacherId") var teacherId: String = "",
+    @get:PropertyName("studentIds") @set:PropertyName("studentIds") var studentIds: List<String> = emptyList(),
+    @get:PropertyName("schoolLevel") @set:PropertyName("schoolLevel") var schoolLevel: String = "SMP",
+    @get:PropertyName("grade") @set:PropertyName("grade") var grade: Int = 9,
+    @get:PropertyName("className") @set:PropertyName("className") var className: String = "9-A",
+    @get:PropertyName("aktif") @set:PropertyName("aktif") var aktif: Boolean = true
 ) {
     @get:Exclude
     val userRole: UserRole
