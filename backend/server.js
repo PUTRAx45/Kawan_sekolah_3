@@ -352,13 +352,23 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
     const userMessage = question || `Berikan rekomendasi belajar terbaru untuk ${studentName} pada mapel ${subject}.`;
 
     try {
+      const apiKey = (process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY || '').trim();
+      if (isKeyPlaceholder(apiKey)) {
+        return res.status(500).json({
+          status: 'error',
+          message: 'AI belum dikonfigurasi. Silakan isi OPENROUTER_API_KEY di file .env server backend.'
+        });
+      }
+
       const openRouterRes = await callOpenRouter([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage }
       ], 0.3, 300);
 
-      const aiReply = openRouterRes.data?.choices?.[0]?.message?.content?.trim() ||
-        `Berdasarkan nilai rata-rata ${avgScore} pada mapel ${subject}, ${studentName} disarankan rutin mengulas contoh soal 15 menit setiap hari.`;
+      const aiReply = openRouterRes.data?.choices?.[0]?.message?.content?.trim();
+      if (!aiReply) {
+        throw { statusCode: 500, publicMessage: 'AI belum dikonfigurasi / tidak memberikan respon.' };
+      }
 
       return res.json({
         status: 'success',
@@ -370,15 +380,11 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
         }
       });
     } catch (aiErr) {
-      const fallbackReply = `Siswa ${studentName} pada mapel ${subject} (Nilai ${avgScore}) disarankan rutin berlatih soal bertahap 15 menit sehari.`;
-      return res.json({
-        status: 'success',
-        message: 'Respons AI lokal aktif',
-        data: {
-          answer: fallbackReply,
-          aiRecommendation: fallbackReply,
-          averageScore: avgScore
-        }
+      const statusCode = aiErr.statusCode || 500;
+      const publicMsg = aiErr.publicMessage || aiErr.message || 'AI belum dikonfigurasi';
+      return res.status(statusCode).json({
+        status: 'error',
+        message: publicMsg
       });
     }
   } catch (error) {
@@ -563,9 +569,12 @@ app.get('/health', async (req, res) => {
   }
 
   const isHealthy = authStatus === 'OK' && firestoreStatus === 'OK';
+  const pkg = require('./package.json');
 
   res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? 'UP' : 'DEGRADED',
+    package: `${pkg.name}@${pkg.version}`,
+    cwd: process.cwd(),
     timestamp: new Date().toISOString(),
     services: {
       backend: 'UP',
@@ -576,7 +585,7 @@ app.get('/health', async (req, res) => {
       port: PORT,
       projectId: process.env.GCLOUD_PROJECT || 'demo-kawansekolah',
       authHost: process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
-      firestoreHost: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080'
+      firestoreHost: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8081'
     }
   });
 });
