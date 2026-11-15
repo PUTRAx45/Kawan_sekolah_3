@@ -551,27 +551,36 @@ app.post('/dev/seed-clear', async (req, res) => {
   }
 });
 
-// Endpoint Health Check: GET /health
-app.get('/health', async (req, res) => {
-  let authStatus = 'OK';
-  let firestoreStatus = 'OK';
+// 4. Endpoint Lightweight GET /health (Ultra-fast response for connection tests)
+app.get('/health', (req, res) => {
+  const pkg = require('./package.json');
+  return res.json({
+    status: 'UP',
+    package: `${pkg.name}@${pkg.version}`,
+    cwd: process.cwd(),
+    timestamp: new Date().toISOString()
+  });
+});
 
-  try {
-    await admin.auth().listUsers(1);
-  } catch (e) {
-    authStatus = `ERROR: ${e.message}`;
-  }
+// Detailed Health Check: GET /health/detail (2s timeout per emulator SDK check)
+app.get('/health/detail', async (req, res) => {
+  const checkAuthPromise = Promise.race([
+    admin.auth().listUsers(1).then(() => 'OK').catch(e => `ERROR: ${e.message}`),
+    new Promise(resolve => setTimeout(() => resolve('TIMEOUT (2s)'), 2000))
+  ]);
 
-  try {
-    await admin.firestore().collection('health').doc('check').get();
-  } catch (e) {
-    firestoreStatus = `ERROR: ${e.message}`;
-  }
+  const checkFirestorePromise = Promise.race([
+    admin.firestore().collection('health').doc('check').get().then(() => 'OK').catch(e => `ERROR: ${e.message}`),
+    new Promise(resolve => setTimeout(() => resolve('TIMEOUT (2s)'), 2000))
+  ]);
+
+  const authStatus = await checkAuthPromise;
+  const firestoreStatus = await checkFirestorePromise;
 
   const isHealthy = authStatus === 'OK' && firestoreStatus === 'OK';
   const pkg = require('./package.json');
 
-  res.status(isHealthy ? 200 : 503).json({
+  return res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? 'UP' : 'DEGRADED',
     package: `${pkg.name}@${pkg.version}`,
     cwd: process.cwd(),

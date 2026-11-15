@@ -422,54 +422,61 @@ fun LoginScreen(
                                 val targetHost = serverHostInput.trim().ifBlank { "10.0.2.2" }
 
                                 val resMsg = withContext(Dispatchers.IO) {
-                                    // 1. Backend 3000 HTTP GET /health
-                                    val backendRes = try {
-                                        val conn = java.net.URL("http://$targetHost:3000/health").openConnection() as java.net.HttpURLConnection
-                                        conn.connectTimeout = 2500
-                                        conn.readTimeout = 2500
-                                        conn.connect()
-                                        if (conn.responseCode == 200) "OK" else "HTTP ${conn.responseCode}"
-                                    } catch (e: java.net.SocketTimeoutException) {
-                                        "Timeout (2.5s)"
-                                    } catch (e: java.net.ConnectException) {
-                                        "Ditolak (Port 3000)"
-                                    } catch (e: Exception) {
-                                        "Gagal (${e.message})"
+                                    fun testSocket(host: String, port: Int, timeoutMs: Int = 3000): String {
+                                        val start = System.currentTimeMillis()
+                                        return try {
+                                            val s = java.net.Socket()
+                                            s.connect(java.net.InetSocketAddress(host, port), timeoutMs)
+                                            s.close()
+                                            val duration = System.currentTimeMillis() - start
+                                            "OK (${duration}ms)"
+                                        } catch (e: java.net.SocketTimeoutException) {
+                                            "Timeout (${timeoutMs / 1000}s)"
+                                        } catch (e: java.net.ConnectException) {
+                                            "Ditolak (Port $port)"
+                                        } catch (e: java.net.UnknownHostException) {
+                                            "Host tidak ditemukan ($host)"
+                                        } catch (e: Exception) {
+                                            "Gagal (${e.message})"
+                                        }
                                     }
 
-                                    // 2. Auth Emulator Socket 9099
-                                    val authRes = try {
-                                        val s = java.net.Socket()
-                                        s.connect(java.net.InetSocketAddress(targetHost, 9099), 2500)
-                                        s.close()
-                                        "OK"
-                                    } catch (e: java.net.SocketTimeoutException) {
-                                        "Timeout (2.5s)"
-                                    } catch (e: java.net.ConnectException) {
-                                        "Ditolak (Port 9099)"
-                                    } catch (e: Exception) {
-                                        "Gagal (${e.message})"
+                                    fun testBackendHttp(host: String): String {
+                                        val timeoutMs = 8000
+                                        for (attempt in 1..2) {
+                                            val start = System.currentTimeMillis()
+                                            try {
+                                                val url = java.net.URL("http://$host:3000/health")
+                                                val conn = url.openConnection() as java.net.HttpURLConnection
+                                                conn.connectTimeout = timeoutMs
+                                                conn.readTimeout = timeoutMs
+                                                conn.connect()
+                                                val code = conn.responseCode
+                                                val duration = System.currentTimeMillis() - start
+                                                return if (code == 200) "OK (${duration}ms)" else "HTTP $code (${duration}ms)"
+                                            } catch (e: java.net.SocketTimeoutException) {
+                                                if (attempt == 2) return "Timeout (8s)"
+                                            } catch (e: java.net.ConnectException) {
+                                                if (attempt == 2) return "Ditolak (Port 3000)"
+                                            } catch (e: java.net.UnknownHostException) {
+                                                return "Host tidak ditemukan ($host)"
+                                            } catch (e: Exception) {
+                                                if (attempt == 2) return "Gagal (${e.message})"
+                                            }
+                                        }
+                                        return "Timeout (8s)"
                                     }
 
-                                    // 3. Firestore Emulator Socket 8081
-                                    val firestoreRes = try {
-                                        val s = java.net.Socket()
-                                        s.connect(java.net.InetSocketAddress(targetHost, 8081), 2500)
-                                        s.close()
-                                        "OK"
-                                    } catch (e: java.net.SocketTimeoutException) {
-                                        "Timeout (2.5s)"
-                                    } catch (e: java.net.ConnectException) {
-                                        "Ditolak (Port 8081)"
-                                    } catch (e: Exception) {
-                                        "Gagal (${e.message})"
-                                    }
+                                    val backendRes = testBackendHttp(targetHost)
+                                    val authRes = testSocket(targetHost, 9099, 3000)
+                                    val firestoreRes = testSocket(targetHost, 8081, 3000)
 
-                                    val isOk = backendRes.startsWith("OK") && authRes == "OK" && firestoreRes == "OK"
+                                    val isOk = backendRes.startsWith("OK") && authRes.startsWith("OK") && firestoreRes.startsWith("OK")
+
                                     if (isOk) {
-                                        "✅ SEMUA LAYANAN TERKONEKSI (OK):\n• Backend (3000): OK\n• Auth (9099): OK\n• Firestore (8081): OK"
+                                        "✅ SEMUA LAYANAN TERKONEKSI (OK):\n• Backend (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes"
                                     } else {
-                                        "❌ STATUS KONEKSI LAYANAN:\n• Backend API (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes\n\n💡 Pastikan laptop menyala, satu Wi-Fi, dan 'buka-firewall.bat' telah dijalankan sebagai Administrator."
+                                        "❌ STATUS KONEKSI LAYANAN:\n• Backend API (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes"
                                     }
                                 }
 
