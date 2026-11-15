@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "cek": "node cek-semua.js",
     "seed": "node seed-manager.js seed",
     "seed:clear": "node seed-manager.js clear",
     "seed:reset": "node seed-manager.js reset",
