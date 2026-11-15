@@ -1,5 +1,6 @@
 package com.example.kawansekolah
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.example.kawansekolah.utils.DevHost
@@ -45,39 +46,46 @@ object FirebaseEmulatorHelper {
     }
 
     fun setupEmulators(
+        context: Context? = null,
         useEmulator: Boolean = BuildConfig.USE_EMULATOR,
-        host: String = DevHost.getHost()
+        overrideHost: String? = null
     ) {
         if (!useEmulator || isEmulatorConfigured) return
 
-        val targetHost = host.ifBlank { "10.0.2.2" }
+        val host = overrideHost ?: DevHost.getHost(context)
+        val targetHost = host.trim().ifBlank {
+            if (isPhysicalDevice()) "" else "10.0.2.2"
+        }
+
+        if (isPhysicalDevice() && targetHost.isBlank()) {
+            Log.w("ScolarsiaNet", "⚠️ HP FISIK DETECTED (${Build.MANUFACTURER} ${Build.MODEL}): Alamat server belum diatur. Gunakan dialog Alamat Server (ikon ⚙️ di layar login).")
+            return
+        }
 
         try {
             val activeProjectId = try { FirebaseApp.getInstance().options.projectId } catch (_: Exception) { "Unknown" }
-            Log.i("FirebaseEmulator", "🔥 Firebase SDK Project ID aktif: '$activeProjectId'")
 
-            if (isPhysicalDevice()) {
-                Log.w(
-                    "FirebaseEmulator",
-                    "⚠️ HP FISIK DETECTED (${Build.MANUFACTURER} ${Build.MODEL}). Menghubungkan ke $targetHost:8081 (Firestore) & $targetHost:9099 (Auth)..."
-                )
-            } else {
-                Log.d("FirebaseEmulator", "📱 ANDROID EMULATOR DETECTED (${Build.MODEL}). Menghubungkan ke $targetHost:8081 (Firestore) & $targetHost:9099 (Auth)...")
-            }
+            Log.i("ScolarsiaNet", "======================================================")
+            Log.i("ScolarsiaNet", "📡 KONFIGURASI KONEKSI EMULATOR SCOLARSIA:")
+            Log.i("ScolarsiaNet", "   Project ID: '$activeProjectId'")
+            Log.i("ScolarsiaNet", "   Auth -> $targetHost:9099")
+            Log.i("ScolarsiaNet", "   Firestore -> $targetHost:8081")
+            Log.i("ScolarsiaNet", "   Backend -> $targetHost:3000")
+            Log.i("ScolarsiaNet", "======================================================")
 
             Firebase.firestore.firestoreSettings = firestoreSettings {
                 setLocalCacheSettings(memoryCacheSettings { })
+                isSslEnabled = false
             }
             Firebase.firestore.useEmulator(targetHost, 8081)
-            Log.d("FirebaseEmulator", "✅ Firestore emulator terhubung ke $targetHost:8081")
+            Log.d("ScolarsiaNet", "✅ Firestore emulator terhubung ke $targetHost:8081")
 
             Firebase.auth.useEmulator(targetHost, 9099)
-            Log.d("FirebaseEmulator", "✅ Auth emulator terhubung ke $targetHost:9099")
+            Log.d("ScolarsiaNet", "✅ Auth emulator terhubung ke $targetHost:9099")
 
             isEmulatorConfigured = true
         } catch (e: Exception) {
-            val deviceType = if (isPhysicalDevice()) "HP Fisik" else "Android Emulator"
-            Log.e("FirebaseEmulator", "❌ Gagal terhubung ke Firebase Emulator pada $deviceType di host '$targetHost': ${e.message}")
+            Log.w("ScolarsiaNet", "⚠️ Firestore/Auth emulator sudah diinisialisasi atau mengalami kendala di host '$targetHost': ${e.message}")
         }
     }
 }

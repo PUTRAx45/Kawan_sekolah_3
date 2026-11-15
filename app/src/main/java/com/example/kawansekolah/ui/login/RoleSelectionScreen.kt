@@ -231,14 +231,14 @@ fun RoleSelectionScreen(
                     if (testResultMsg.isNotBlank()) {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (testResultMsg.contains("OK")) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.errorContainer,
+                            color = if (testResultMsg.contains("✅")) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.errorContainer,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = testResultMsg,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (testResultMsg.contains("OK")) Color(0xFF166534) else MaterialTheme.colorScheme.error,
+                                color = if (testResultMsg.contains("✅")) Color(0xFF166534) else MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(10.dp)
                             )
                         }
@@ -247,37 +247,71 @@ fun RoleSelectionScreen(
                     OutlinedButton(
                         onClick = {
                             isTestingConnection = true
-                            testResultMsg = "⏳ Memeriksa status kesehatan server di ${serverHostInput.trim()}..."
+                            testResultMsg = "⏳ Memeriksa 3 layanan (Backend 3000, Auth 9099, Firestore 8081)..."
                             coroutineScope.launch {
                                 val targetHost = serverHostInput.trim().ifBlank { "10.0.2.2" }
-                                val healthUrl = "http://$targetHost:3000/health"
-                                try {
-                                    val res = withContext(Dispatchers.IO) {
-                                        val url = java.net.URL(healthUrl)
-                                        val conn = url.openConnection() as java.net.HttpURLConnection
-                                        conn.connectTimeout = 3000
-                                        conn.readTimeout = 3000
+
+                                val resMsg = withContext(Dispatchers.IO) {
+                                    // 1. Backend 3000 HTTP GET /health
+                                    val backendRes = try {
+                                        val conn = java.net.URL("http://$targetHost:3000/health").openConnection() as java.net.HttpURLConnection
+                                        conn.connectTimeout = 2500
+                                        conn.readTimeout = 2500
                                         conn.connect()
-                                        val code = conn.responseCode
-                                        if (code == 200) {
-                                            "✅ Backend: OK | Auth (9099): OK | Firestore (8081): OK"
-                                        } else {
-                                            "⚠️ Backend HTTP $code: Periksa emulator suite"
-                                        }
+                                        if (conn.responseCode == 200) "OK" else "HTTP ${conn.responseCode}"
+                                    } catch (e: java.net.SocketTimeoutException) {
+                                        "Timeout (2.5s)"
+                                    } catch (e: java.net.ConnectException) {
+                                        "Ditolak (Port 3000)"
+                                    } catch (e: Exception) {
+                                        "Gagal (${e.message})"
                                     }
-                                    testResultMsg = res
-                                } catch (_: Exception) {
-                                    testResultMsg = "❌ Tidak bisa menjangkau $targetHost. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat)."
-                                } finally {
-                                    isTestingConnection = false
+
+                                    // 2. Auth Emulator Socket 9099
+                                    val authRes = try {
+                                        val s = java.net.Socket()
+                                        s.connect(java.net.InetSocketAddress(targetHost, 9099), 2500)
+                                        s.close()
+                                        "OK"
+                                    } catch (e: java.net.SocketTimeoutException) {
+                                        "Timeout (2.5s)"
+                                    } catch (e: java.net.ConnectException) {
+                                        "Ditolak (Port 9099)"
+                                    } catch (e: Exception) {
+                                        "Gagal (${e.message})"
+                                    }
+
+                                    // 3. Firestore Emulator Socket 8081
+                                    val firestoreRes = try {
+                                        val s = java.net.Socket()
+                                        s.connect(java.net.InetSocketAddress(targetHost, 8081), 2500)
+                                        s.close()
+                                        "OK"
+                                    } catch (e: java.net.SocketTimeoutException) {
+                                        "Timeout (2.5s)"
+                                    } catch (e: java.net.ConnectException) {
+                                        "Ditolak (Port 8081)"
+                                    } catch (e: Exception) {
+                                        "Gagal (${e.message})"
+                                    }
+
+                                    val isOk = backendRes.startsWith("OK") && authRes == "OK" && firestoreRes == "OK"
+                                    if (isOk) {
+                                        "✅ SEMUA LAYANAN TERKONEKSI (OK):\n• Backend (3000): OK\n• Auth (9099): OK\n• Firestore (8081): OK"
+                                    } else {
+                                        "❌ STATUS KONEKSI LAYANAN:\n• Backend API (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes\n\n💡 Pastikan laptop menyala, satu Wi-Fi, dan 'buka-firewall.bat' telah dijalankan sebagai Administrator."
+                                    }
                                 }
+
+                                testResultMsg = resMsg
+                                isTestingConnection = false
                             }
                         },
                         enabled = !isTestingConnection,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text(if (isTestingConnection) "Memeriksa..." else "Tes Koneksi (port 3000)", fontSize = 13.sp)
+                        Text(if (isTestingConnection) "Memeriksa..." else "Tes Koneksi (3 Layanan)", fontSize = 13.sp)
                     }
                 }
             },
@@ -285,9 +319,19 @@ fun RoleSelectionScreen(
                 Button(
                     onClick = {
                         val cleanHost = serverHostInput.trim()
+                        val oldHost = DevHost.getHost(context)
                         DevHost.saveDynamicHost(context, cleanHost)
-                        FirebaseEmulatorHelper.setupEmulators(true, cleanHost)
-                        showServerConfigDialog = false
+
+                        if (oldHost.isNotBlank() && oldHost != cleanHost) {
+                            android.widget.Toast.makeText(context, "✅ Alamat server disimpan ($cleanHost). Aplikasi akan restart...", android.widget.Toast.LENGTH_LONG).show()
+                            val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                            intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            context.startActivity(intent)
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                        } else {
+                            FirebaseEmulatorHelper.setupEmulators(context, true, cleanHost)
+                            showServerConfigDialog = false
+                        }
                     },
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)

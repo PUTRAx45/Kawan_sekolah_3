@@ -154,7 +154,12 @@ object AuthRepository {
                     getUserProfile(uid)
                 } catch (e: FirebaseFirestoreException) {
                     auth.signOut()
-                    throw IllegalStateException("Gagal membaca Firestore: ${e.message} (Kode: ${e.code})")
+                    val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                    if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+                        throw IllegalStateException("Tidak bisa menjangkau Firestore emulator di $targetHost:8081. Pastikan laptop menyala, satu Wi-Fi, dan port 8081 terbuka (buka-firewall.bat).")
+                    } else {
+                        throw IllegalStateException("Gagal membaca Firestore: ${e.message} (Kode: ${e.code})")
+                    }
                 }
 
                 if (userProfile == null) {
