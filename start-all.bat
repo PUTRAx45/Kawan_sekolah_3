@@ -50,20 +50,30 @@ for /f "usebackq tokens=1,2 delims=," %%a in (`node -e "const admin=require('fir
 if "%AUTH_COUNT%"=="" set AUTH_COUNT=0
 if "%DOC_COUNT%"=="" set DOC_COUNT=0
 
-if %AUTH_COUNT% GEQ 15 if %DOC_COUNT% GEQ 15 (
-    echo.
-    echo ✅ Data akun sudah ada (%AUTH_COUNT% akun Auth & %DOC_COUNT% dokumen users). Melewati proses seed.
-) else (
-    echo.
-    echo ⚠️ Data akun kurang (Auth: %AUTH_COUNT%, Dokumen users: %DOC_COUNT%). Mengisi data dummy via 'npm run seed'...
-    npm run seed
-    if %ERRORLEVEL% NEQ 0 (
-        echo.
-        echo ⚠️ SEED GAGAL, backend tetap dijalankan tetapi login mungkin gagal.
-        timeout /t 3 >nul
-    )
-)
+set NEED_SEED=0
+if %AUTH_COUNT% LSS 15 set NEED_SEED=1
+if %DOC_COUNT% LSS 15 set NEED_SEED=1
 
+if %NEED_SEED%==1 goto doseed
+if %NEED_SEED%==0 goto skipseed
+
+:doseed
+echo.
+echo ⚠️ Data akun kurang (Auth: %AUTH_COUNT%, Dokumen users: %DOC_COUNT%). Mengisi data dummy via 'call npm run seed'...
+call npm run seed
+if errorlevel 1 (
+    echo.
+    echo ⚠️ SEED GAGAL, backend tetap dijalankan tetapi login mungkin gagal.
+    timeout /t 3 >nul
+)
+goto continue_start
+
+:skipseed
+echo.
+echo ✅ Data akun sudah ada (%AUTH_COUNT% akun Auth & %DOC_COUNT% dokumen users). Melewati proses seed.
+goto continue_start
+
+:continue_start
 echo.
 echo 🧹 [5/6] Memeriksa dan mematikan proses lama di port 3000...
 powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force"
@@ -76,4 +86,4 @@ echo.
 echo 🚀 Memulai Health Check Async & Backend AI Node.js Express (port 3000)...
 start /b powershell -Command "Start-Sleep -Seconds 3; try { $h=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/health' -TimeoutSec 3; Write-Host '✅ Health Check Backend:' ($h | ConvertTo-Json -Compress) } catch { Write-Host '⚠️ Backend startup in progress...' }"
 cd /d %~dp0backend
-npm start
+call npm start

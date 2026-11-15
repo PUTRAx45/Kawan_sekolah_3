@@ -354,9 +354,10 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
     try {
       const apiKey = (process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY || '').trim();
       if (isKeyPlaceholder(apiKey)) {
-        return res.status(500).json({
+        return res.status(502).json({
           status: 'error',
-          message: 'AI belum dikonfigurasi. Silakan isi OPENROUTER_API_KEY di file .env server backend.'
+          code: 'AI_KEY_INVALID',
+          message: 'AI belum dikonfigurasi atau kunci tidak valid'
         });
       }
 
@@ -367,7 +368,7 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
 
       const aiReply = openRouterRes.data?.choices?.[0]?.message?.content?.trim();
       if (!aiReply) {
-        throw { statusCode: 500, publicMessage: 'AI belum dikonfigurasi / tidak memberikan respon.' };
+        throw { statusCode: 502, code: 'AI_KEY_INVALID', publicMessage: 'AI belum dikonfigurasi atau kunci tidak valid' };
       }
 
       return res.json({
@@ -380,10 +381,12 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
         }
       });
     } catch (aiErr) {
-      const statusCode = aiErr.statusCode || 500;
-      const publicMsg = aiErr.publicMessage || aiErr.message || 'AI belum dikonfigurasi';
+      const statusCode = aiErr.statusCode || 502;
+      const code = aiErr.code || 'AI_KEY_INVALID';
+      const publicMsg = aiErr.publicMessage || aiErr.message || 'AI belum dikonfigurasi atau kunci tidak valid';
       return res.status(statusCode).json({
         status: 'error',
+        code: code,
         message: publicMsg
       });
     }
