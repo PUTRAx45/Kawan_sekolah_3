@@ -5,7 +5,7 @@ echo 🚀 STARTING SCOLARSIA EMULATOR & BACKEND SERVICES
 echo ======================================================
 
 echo.
-echo 📦 [1/5] Menjalankan Firebase Emulator Suite di Docker (C:\firebase-docker)...
+echo 📦 [1/6] Menjalankan Firebase Emulator Suite di Docker (C:\firebase-docker)...
 cd /d C:\firebase-docker
 docker compose up -d
 if %ERRORLEVEL% NEQ 0 (
@@ -17,7 +17,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo ⏳ [2/5] Menunggu Firebase Auth Emulator (port 9099) siap...
+echo ⏳ [2/6] Menunggu Firebase Auth Emulator (port 9099) siap...
 powershell -Command "$max=40; $count=0; while($count -lt $max){ try { $r=Invoke-WebRequest -Uri 'http://127.0.0.1:9099' -TimeoutSec 2 -ErrorAction Stop; if($r.StatusCode -eq 200){ Write-Host '✅ Auth Emulator Siap!'; break } } catch { $count++; Write-Host '. ($count/40)'; Start-Sleep -Seconds 2 } }; if($count -eq $max){ Write-Host '❌ Timed out waiting for Auth Emulator. Petunjuk: docker compose logs firebase-emulator --tail 40'; exit 1 }"
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -29,30 +29,51 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo 🔍 [3/5] Memeriksa kelengkapan data akun di Auth Emulator...
-cd /d %~dp0backend
-for /f "usebackq tokens=*" %%i in (`node -e "const admin=require('firebase-admin'); process.env.FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'; process.env.FIRESTORE_EMULATOR_HOST='127.0.0.1:8081'; if(!admin.apps.length) admin.initializeApp({projectId:'demo-kawansekolah'}); admin.auth().listUsers(1000).then(r => console.log(r.users.length)).catch(() => console.log(0));" 2^>nul`) do set USER_COUNT=%%i
-
-if "%USER_COUNT%"=="" set USER_COUNT=0
-
-if %USER_COUNT% GEQ 15 (
+echo ⏳ [3/6] Menunggu Cloud Firestore Emulator (port 8081) siap...
+powershell -Command "$max=40; $count=0; while($count -lt $max){ try { $r=Invoke-WebRequest -Uri 'http://127.0.0.1:8081' -TimeoutSec 2 -ErrorAction Stop; if($r.Content -match 'Ok' -or $r.StatusCode -eq 200){ Write-Host '✅ Firestore Emulator Siap!'; break } } catch { $count++; Write-Host '. ($count/40)'; Start-Sleep -Seconds 2 } }; if($count -eq $max){ Write-Host '❌ Timed out waiting for Firestore Emulator.'; exit 1 }"
+if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo ✅ Data akun sudah ada (%USER_COUNT% akun di Auth Emulator). Melewati proses seed.
-) else (
+    echo ❌ Gagal terhubung ke Cloud Firestore Emulator di port 8081.
     echo.
-    echo ⚠️ Akun Auth ditemukan (%USER_COUNT% akun). Mengisi data dummy otomatis via 'npm run seed'...
-    npm run seed
+    pause
+    exit /b 1
 )
 
 echo.
-echo 🧹 [4/5] Memeriksa dan mematikan proses lama di port 3000...
+echo 🔍 [4/6] Memeriksa kelengkapan data akun di Auth & Firestore...
+cd /d %~dp0backend
+for /f "usebackq tokens=1,2 delims=," %%a in (`node -e "const admin=require('firebase-admin'); process.env.FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'; process.env.FIRESTORE_EMULATOR_HOST='127.0.0.1:8081'; if(!admin.apps.length) admin.initializeApp({projectId:'demo-kawansekolah'}); Promise.all([admin.auth().listUsers(1000), admin.firestore().collection('users').get()]).then(([u, d]) => console.log(u.users.length + ',' + d.size)).catch(() => console.log('0,0'));" 2^>nul`) do (
+    set AUTH_COUNT=%%a
+    set DOC_COUNT=%%b
+)
+
+if "%AUTH_COUNT%"=="" set AUTH_COUNT=0
+if "%DOC_COUNT%"=="" set DOC_COUNT=0
+
+if %AUTH_COUNT% GEQ 15 if %DOC_COUNT% GEQ 15 (
+    echo.
+    echo ✅ Data akun sudah ada (%AUTH_COUNT% akun Auth & %DOC_COUNT% dokumen users). Melewati proses seed.
+) else (
+    echo.
+    echo ⚠️ Data akun kurang (Auth: %AUTH_COUNT%, Dokumen users: %DOC_COUNT%). Mengisi data dummy via 'npm run seed'...
+    npm run seed
+    if %ERRORLEVEL% NEQ 0 (
+        echo.
+        echo ⚠️ SEED GAGAL, backend tetap dijalankan tetapi login mungkin gagal.
+        timeout /t 3 >nul
+    )
+)
+
+echo.
+echo 🧹 [5/6] Memeriksa dan mematikan proses lama di port 3000...
 powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force"
 
 echo.
-echo 🌐 [5/5] INFORMASI ALAMAT IP WI-FI LAPTOP:
+echo 🌐 [6/6] INFORMASI ALAMAT IP WI-FI LAPTOP:
 powershell -Command "Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null -and $_.NetAdapter.Status -eq 'Up' -and $_.NetAdapter.InterfaceDescription -notmatch 'Docker|WSL|VirtualBox|vEthernet' } | ForEach-Object { Write-Host '📌 IP Wi-Fi Laptop:' $_.IPv4Address.IPAddress }"
 
 echo.
-echo 🚀 Memulai Backend AI Node.js Express (port 3000)...
+echo 🚀 Memulai Health Check Async & Backend AI Node.js Express (port 3000)...
+start /b powershell -Command "Start-Sleep -Seconds 3; try { $h=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/health' -TimeoutSec 3; Write-Host '✅ Health Check Backend:' ($h | ConvertTo-Json -Compress) } catch { Write-Host '⚠️ Backend startup in progress...' }"
 cd /d %~dp0backend
 npm start
