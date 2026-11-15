@@ -14,5 +14,9 @@ cd /d C:\firebase-docker
 docker compose stop
 
 echo.
-echo ✅ Semua layanan berhasil dihentikan dan data emulator tersimpan di ./emulator-data.
+echo ⏳ Memeriksa berkas hasil export di ./emulator-data/export...
+dir /b C:\firebase-docker\emulator-data\export 2>nul
+
+echo.
+echo ✅ Semua layanan berhasil dihentikan dan data emulator tersimpan secara permanen.
 pause
