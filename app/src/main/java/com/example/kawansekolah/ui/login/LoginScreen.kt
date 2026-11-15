@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -29,12 +30,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kawansekolah.BuildConfig
+import com.example.kawansekolah.FirebaseEmulatorHelper
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.User
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.ui.theme.PrimaryBlue
 import com.example.kawansekolah.ui.theme.TextMuted
+import com.example.kawansekolah.utils.DevHost
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +55,7 @@ fun LoginScreen(
     val authUiState by authViewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     BackHandler {
         onBackToRoleSelection()
@@ -58,6 +66,12 @@ fun LoginScreen(
     var passwordInput by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
+    // Dialog Konfigurasi Alamat Server (Debug Mode Only)
+    var showServerConfigDialog by remember { mutableStateOf(false) }
+    var serverHostInput by remember { mutableStateOf(DevHost.getHost(context)) }
+    var testResultMsg by remember { mutableStateOf("") }
+    var isTestingConnection by remember { mutableStateOf(false) }
 
     val roleTitle = when (selectedRole) {
         UserRole.GURU -> "Guru"
@@ -123,6 +137,26 @@ fun LoginScreen(
             .navigationBarsPadding()
             .imePadding()
     ) {
+        // Gear Icon Button at Top Right (Debug Only)
+        if (BuildConfig.DEBUG) {
+            IconButton(
+                onClick = {
+                    serverHostInput = DevHost.getHost(context)
+                    testResultMsg = ""
+                    showServerConfigDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Pengaturan Alamat Server",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -258,22 +292,34 @@ fun LoginScreen(
             val activeError = if (errorMessage.isNotBlank()) errorMessage else if (authUiState is AuthUiState.Error) (authUiState as AuthUiState.Error).message else ""
 
             if (activeError.isNotEmpty()) {
-                Text(
-                    text = activeError,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                ) {
+                    Text(
+                        text = activeError,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            val context = LocalContext.current
 
             // Primary Button "Masuk"
             Button(
                 onClick = {
                     errorMessage = ""
+                    val targetHost = DevHost.getHost(context)
+                    if (DevHost.isPhysicalDevice() && targetHost.isBlank()) {
+                        errorMessage = "Alamat server belum diatur. Klik ikon roda gigi ⚙️ di pojok kanan atas untuk memasukkan IP Wi-Fi laptop Anda."
+                        return@Button
+                    }
                     val inputEmail = identifierInput.ifBlank { defaultDemoEmail }
                     val inputPass = passwordInput.ifBlank { "1g2u3r4u" }
                     authViewModel.login(inputEmail, inputPass, selectedRole, context)
@@ -315,5 +361,106 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+    }
+
+    // Dialog Konfigurasi & Tes Alamat Server
+    if (showServerConfigDialog) {
+        AlertDialog(
+            onDismissRequest = { showServerConfigDialog = false },
+            title = {
+                Text("Konfigurasi Alamat Server", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Masukkan IP Wi-Fi laptop (misal: 192.168.1.10) atau 10.0.2.2 untuk Android Emulator:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = serverHostInput,
+                        onValueChange = { serverHostInput = it },
+                        label = { Text("IP Laptop / Host") },
+                        placeholder = { Text("192.168.1.x atau 10.0.2.2") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (testResultMsg.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (testResultMsg.contains("OK")) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = testResultMsg,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (testResultMsg.contains("OK")) Color(0xFF166534) else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            isTestingConnection = true
+                            testResultMsg = "⏳ Memeriksa status kesehatan server di ${serverHostInput.trim()}..."
+                            coroutineScope.launch {
+                                val targetHost = serverHostInput.trim().ifBlank { "10.0.2.2" }
+                                val healthUrl = "http://$targetHost:3000/health"
+                                try {
+                                    val res = withContext(Dispatchers.IO) {
+                                        val url = java.net.URL(healthUrl)
+                                        val conn = url.openConnection() as java.net.HttpURLConnection
+                                        conn.connectTimeout = 3000
+                                        conn.readTimeout = 3000
+                                        conn.connect()
+                                        val code = conn.responseCode
+                                        if (code == 200) {
+                                            "✅ Backend: OK | Auth (9099): OK | Firestore (8081): OK"
+                                        } else {
+                                            "⚠️ Backend HTTP $code: Periksa emulator suite"
+                                        }
+                                    }
+                                    testResultMsg = res
+                                } catch (e: Exception) {
+                                    testResultMsg = "❌ Tidak bisa menjangkau $targetHost. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat)."
+                                } finally {
+                                    isTestingConnection = false
+                                }
+                            }
+                        },
+                        enabled = !isTestingConnection,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(if (isTestingConnection) "Memeriksa..." else "Tes Koneksi (port 3000)", fontSize = 13.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val cleanHost = serverHostInput.trim()
+                        DevHost.saveDynamicHost(context, cleanHost)
+                        FirebaseEmulatorHelper.setupEmulators(true, cleanHost)
+                        showServerConfigDialog = false
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Text("Simpan & Terapkan", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showServerConfigDialog = false }) {
+                    Text("Batal")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 }

@@ -15,6 +15,7 @@ val localProperties = Properties().apply {
 }
 
 val devHostProp = localProperties.getProperty("dev.host")?.trim() ?: ""
+val devServerHostProp = localProperties.getProperty("DEV_SERVER_HOST")?.trim() ?: devHostProp
 val devModeProp = localProperties.getProperty("dev.mode")?.trim() ?: ""
 
 android {
@@ -35,6 +36,7 @@ android {
         debug {
             buildConfigField("boolean", "USE_EMULATOR", "true")
             buildConfigField("String", "DEV_HOST", "\"$devHostProp\"")
+            buildConfigField("String", "DEV_SERVER_HOST", "\"$devServerHostProp\"")
             buildConfigField("String", "DEV_MODE", "\"$devModeProp\"")
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
         }

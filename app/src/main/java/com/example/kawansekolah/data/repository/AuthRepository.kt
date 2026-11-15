@@ -165,9 +165,10 @@ object AuthRepository {
             } catch (e: FirebaseAuthInvalidUserException) {
                 throw IllegalStateException("Akun / NISN tidak ditemukan. Silakan periksa kembali.")
             } catch (e: FirebaseAuthInvalidCredentialsException) {
-                throw IllegalStateException("Kata sandi yang Anda masukkan salah.")
+                throw IllegalStateException("Kata sandi yang Anda masukkan salah. Silakan periksa kembali.")
             } catch (e: TimeoutCancellationException) {
-                throw IllegalStateException("Koneksi ke server Auth melebihi batas waktu (timeout). Silakan periksa koneksi internet/emulator.")
+                val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                throw IllegalStateException("Tidak bisa menjangkau $targetHost:9099. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat).")
             } catch (e: IllegalStateException) {
                 throw e
             } catch (e: Exception) {

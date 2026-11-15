@@ -59,17 +59,17 @@ object FirebaseEmulatorHelper {
             if (isPhysicalDevice()) {
                 Log.w(
                     "FirebaseEmulator",
-                    "⚠️ HP FISIK DETECTED (${Build.MANUFACTURER} ${Build.MODEL}). Menghubungkan ke $targetHost:8080 (Firestore) & $targetHost:9099 (Auth)..."
+                    "⚠️ HP FISIK DETECTED (${Build.MANUFACTURER} ${Build.MODEL}). Menghubungkan ke $targetHost:8081 (Firestore) & $targetHost:9099 (Auth)..."
                 )
             } else {
-                Log.d("FirebaseEmulator", "📱 ANDROID EMULATOR DETECTED (${Build.MODEL}). Menghubungkan ke $targetHost:8080 (Firestore) & $targetHost:9099 (Auth)...")
+                Log.d("FirebaseEmulator", "📱 ANDROID EMULATOR DETECTED (${Build.MODEL}). Menghubungkan ke $targetHost:8081 (Firestore) & $targetHost:9099 (Auth)...")
             }
 
             Firebase.firestore.firestoreSettings = firestoreSettings {
                 setLocalCacheSettings(memoryCacheSettings { })
             }
-            Firebase.firestore.useEmulator(targetHost, 8080)
-            Log.d("FirebaseEmulator", "✅ Firestore emulator terhubung ke $targetHost:8080")
+            Firebase.firestore.useEmulator(targetHost, 8081)
+            Log.d("FirebaseEmulator", "✅ Firestore emulator terhubung ke $targetHost:8081")
 
             Firebase.auth.useEmulator(targetHost, 9099)
             Log.d("FirebaseEmulator", "✅ Auth emulator terhubung ke $targetHost:9099")

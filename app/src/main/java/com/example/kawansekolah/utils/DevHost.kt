@@ -1,9 +1,31 @@
 package com.example.kawansekolah.utils
 
+import android.content.Context
 import com.example.kawansekolah.BuildConfig
 import com.example.kawansekolah.FirebaseEmulatorHelper
 
 object DevHost {
+
+    private const val PREF_NAME = "scolarsia_dev_host_prefs"
+    private const val KEY_DYNAMIC_HOST = "dynamic_server_host"
+
+    private var cachedDynamicHost: String? = null
+
+    fun getSavedDynamicHost(context: Context?): String {
+        if (cachedDynamicHost != null) return cachedDynamicHost!!
+        if (context == null) return ""
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val host = prefs.getString(KEY_DYNAMIC_HOST, "") ?: ""
+        cachedDynamicHost = host
+        return host
+    }
+
+    fun saveDynamicHost(context: Context, host: String) {
+        val cleanHost = host.trim().removePrefix("http://").removePrefix("https://").substringBefore(":")
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_DYNAMIC_HOST, cleanHost).apply()
+        cachedDynamicHost = cleanHost
+    }
 
     fun isAdbMode(): Boolean {
         return BuildConfig.DEV_MODE.lowercase() == "adb"
@@ -18,70 +40,77 @@ object DevHost {
     }
 
     /**
-     * Resolves host IP address:
-     * - In ADB mode: "127.0.0.1"
-     * - On Physical Device with dev.host set: BuildConfig.DEV_HOST
-     * - On Android Emulator: "10.0.2.2"
-     * - Fallback on Physical Device without dev.host: "10.0.2.2"
+     * Resolves host IP address according to priority:
+     * 1. DataStore / SharedPreferences dynamic host
+     * 2. BuildConfig.DEV_SERVER_HOST / BuildConfig.DEV_HOST
+     * 3. "10.0.2.2" for Android Emulator
+     * 4. Empty "" for physical device without configured host
      */
-    fun getHost(): String {
+    fun getHost(context: Context? = null): String {
         if (!BuildConfig.USE_EMULATOR) {
             return ""
         }
 
+        // Priority 1: SharedPreferences / DataStore
+        val dynamicHost = getSavedDynamicHost(context)
+        if (dynamicHost.isNotBlank()) {
+            return dynamicHost
+        }
+
+        // Priority 2: ADB Mode
         if (isAdbMode()) {
             return "127.0.0.1"
         }
 
+        // Priority 3: BuildConfig DEV_SERVER_HOST / DEV_HOST
+        val buildConfigHost = try {
+            val h = BuildConfig.DEV_SERVER_HOST.trim()
+            if (h.isNotBlank()) h else BuildConfig.DEV_HOST.trim()
+        } catch (_: Exception) {
+            BuildConfig.DEV_HOST.trim()
+        }
+
+        if (buildConfigHost.isNotBlank()) {
+            return buildConfigHost
+        }
+
+        // Priority 4: Default for Emulator vs Physical Device
         if (isPhysicalDevice()) {
-            val configuredHost = BuildConfig.DEV_HOST.trim()
-            if (configuredHost.isNotBlank()) {
-                return configuredHost
-            }
-            return "10.0.2.2"
+            return "" // Physical HP without host set
         }
 
         return "10.0.2.2"
     }
 
-    fun isHostConfiguredForPhysicalDevice(): Boolean {
-        if (!isPhysicalDevice()) return true
-        if (isAdbMode()) return true
-        return BuildConfig.DEV_HOST.trim().isNotBlank()
-    }
-
-    fun getBackendBaseUrl(): String {
+    fun getBackendBaseUrl(context: Context? = null): String {
         if (!BuildConfig.USE_EMULATOR) {
             return BuildConfig.BASE_URL
         }
-        val host = getHost()
+        val host = getHost(context)
+        if (host.isBlank()) {
+            return "http://10.0.2.2:3000/"
+        }
         return "http://$host:3000/"
     }
 
-    fun getDiagnosticsWarningMessage(): String {
+    fun getDiagnosticsWarningMessage(context: Context? = null): String {
         if (!BuildConfig.USE_EMULATOR) {
             return if (isPlaceholderBaseUrl()) {
-                "⚠️ BASE_URL MASIH PLACEHOLDER!\nURL backend belum diisi di 'app/build.gradle.kts'. Harap ganti 'https://GANTI-DENGAN-URL-BACKEND/' dengan URL server backend online Anda."
+                "⚠️ BASE_URL MASIH PLACEHOLDER!\nURL backend belum diisi di 'app/build.gradle.kts'."
             } else {
-                "🌐 MODE PRODUKSI ONLINE:\nAplikasi terhubung langsung ke Firebase Cloud dan Backend AI Online (${BuildConfig.BASE_URL})."
+                "🌐 MODE PRODUKSI ONLINE:\nAplikasi terhubung langsung ke Firebase Cloud dan Backend AI Online."
             }
         }
 
-        val currentHost = getHost()
-        val configured = isHostConfiguredForPhysicalDevice()
+        val currentHost = getHost(context)
 
-        return if (isPhysicalDevice() && !configured) {
-            "⚠️ PERANGKAT FISIK DETECTED!\n" +
-            "Alamat '10.0.2.2' gagal karena '10.0.2.2' khusus Android Emulator.\n\n" +
-            "Silakan isi IP Wi-Fi laptop Anda di file 'local.properties':\n" +
-            "  dev.host=192.168.1.xxx\n\n" +
-            "Atau jika memakai kabel USB ADB:\n" +
-            "  dev.mode=adb\n" +
-            "  (Lalu jalankan 'adb reverse tcp:3000 tcp:3000', dst)"
+        return if (isPhysicalDevice() && currentHost.isBlank()) {
+            "⚠️ ALAMAT SERVER BELUM DIATUR!\n" +
+            "Silakan isi IP Wi-Fi laptop Anda (misal: 192.168.1.xxx) pada dialog Alamat Server (ikon ⚙️ di layar login)."
         } else if (isAdbMode()) {
             "📱 MODE ADB REVERSE ($currentHost):\n" +
             "Pastikan port forwarding ADB sudah diaktifkan di komputer:\n" +
-            "• adb reverse tcp:8080 tcp:8080 (Backend REST API)\n" +
+            "• adb reverse tcp:3000 tcp:3000 (Backend API)\n" +
             "• adb reverse tcp:8081 tcp:8081 (Firestore Emulator)\n" +
             "• adb reverse tcp:9099 tcp:9099 (Auth Emulator)"
         } else if (isPhysicalDevice()) {
