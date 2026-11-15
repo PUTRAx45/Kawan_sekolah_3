@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
 process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8081';
 
@@ -39,17 +41,36 @@ const DUMMY_USERS = [
 ];
 
 async function seedData() {
-  console.log(`🌱 [SeedManager] Membuat akun Auth & data Firestore dummy (Project: ${PROJECT_ID})...`);
+  console.log('======================================================');
+  console.log(`🌱 [SeedManager] PEMBUATAN AKUN AUTH & DATA FIRESTORE (${PROJECT_ID})`);
+  console.log(`   FIREBASE_AUTH_EMULATOR_HOST = ${process.env.FIREBASE_AUTH_EMULATOR_HOST}`);
+  console.log(`   FIRESTORE_EMULATOR_HOST     = ${process.env.FIRESTORE_EMULATOR_HOST}`);
+  console.log('======================================================');
 
-  // 1. Seed Auth Users
+  const successfulUsers = [];
+
+  // 1. Seed Auth Users (Idempotent)
   for (const u of DUMMY_USERS) {
     try {
+      // Check if email belongs to another UID
+      try {
+        const existingByEmail = await auth.getUserByEmail(u.email);
+        if (existingByEmail.uid !== u.uid) {
+          console.warn(`⚠️ [Seed Auth] Email '${u.email}' terikat pada UID lain (${existingByEmail.uid}). Menghapus akun bentrok...`);
+          await auth.deleteUser(existingByEmail.uid);
+        }
+      } catch (err) {
+        // Ignore if email not found by email
+      }
+
+      let isNew = false;
       try {
         await auth.getUser(u.uid);
         await auth.updateUser(u.uid, {
           email: u.email,
           password: DUMMY_PASS,
-          displayName: u.name
+          displayName: u.name,
+          disabled: false
         });
       } catch (err) {
         if (err.code === 'auth/user-not-found') {
@@ -57,22 +78,28 @@ async function seedData() {
             uid: u.uid,
             email: u.email,
             password: DUMMY_PASS,
-            displayName: u.name
+            displayName: u.name,
+            disabled: false
           });
+          isNew = true;
+        } else {
+          throw err;
         }
       }
 
       await auth.setCustomUserClaims(u.uid, { isDummy: true, role: u.role });
+      const statusLabel = isNew ? 'DIBUAT' : 'DIPERBARUI';
+      console.log(`✅ [Auth Seed] UID: ${u.uid.padEnd(10)} | Email: ${u.email.padEnd(30)} | Status: ${statusLabel}`);
+      successfulUsers.push(u);
     } catch (e) {
-      console.warn(`⚠️ [Seed Auth] Warning user ${u.email}:`, e.message);
+      console.error(`❌ [Auth Seed GAGAL] UID: ${u.uid} | Email: ${u.email} | Error: ${e.message}`);
     }
   }
 
-  // 2. Seed Firestore Collections
+  // 2. Seed Firestore Collections for Successful Users
   const batch = db.batch();
 
-  // Koleksi: pengguna & users
-  for (const u of DUMMY_USERS) {
+  for (const u of successfulUsers) {
     const userDocData = {
       uid: u.uid,
       sekolahId: 'sekolah_01',
@@ -83,6 +110,7 @@ async function seedData() {
       nis: u.nis || '',
       noHp: '08123456789',
       aktif: true,
+      isActive: true,
       wajibGantiSandi: false,
       namaSekolah: 'SMP Scolarsia 1',
       jenjang: 'SMP',
@@ -137,7 +165,24 @@ async function seedData() {
   }
 
   await batch.commit();
-  console.log('✅ [SeedManager] Data dummy berhasil dibuat di Auth & Firestore!');
+
+  // 3. Re-read and Verify Auth Users Count
+  const authListResult = await auth.listUsers(1000);
+  const actualUsers = authListResult.users;
+  console.log(`\n🔍 [VERIFIKASI AKHIR AUTH] Jumlah akun di Auth Emulator: ${actualUsers.length} / ${DUMMY_USERS.length}`);
+
+  const missingUsers = DUMMY_USERS.filter(du => !actualUsers.some(au => au.uid === du.uid));
+
+  if (missingUsers.length > 0) {
+    console.error(`❌ [VERIFIKASI GAGAL] ${missingUsers.length} akun belum terbuat di Auth Emulator:`);
+    missingUsers.forEach(m => console.error(`   - Missing UID: ${m.uid} | Email: ${m.email}`));
+    console.error('======================================================');
+    process.exit(1);
+  }
+
+  console.log('======================================================');
+  console.log(`✅ [VERIFIKASI LULUS] Seluruh ${actualUsers.length} akun dummy berhasil dibuat di Auth & Firestore Emulator!`);
+  console.log('======================================================');
 }
 
 async function clearDummyData() {
