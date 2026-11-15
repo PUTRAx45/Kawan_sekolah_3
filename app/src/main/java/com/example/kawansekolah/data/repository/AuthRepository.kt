@@ -119,7 +119,7 @@ object AuthRepository {
         }
     }
 
-    private fun normalizeRole(roleStr: String): String {
+    fun normalizeRole(roleStr: String): String {
         return when (roleStr.lowercase().trim()) {
             "admin", "administrator" -> "ADMIN"
             "guru", "teacher", "guru_mapel" -> "GURU"
@@ -136,84 +136,75 @@ object AuthRepository {
         expectedRole: UserRole = UserRole.SISWA,
         context: Context? = null
     ): User {
-        var loggedUser: User? = null
-        try {
-            loggedUser = withTimeout(10_000L) {
-                val email = if (identifier.contains("@")) {
-                    identifier.trim()
+        return withTimeout(10_000L) {
+            val email = if (identifier.contains("@")) {
+                identifier.trim()
+            } else {
+                "${identifier.trim()}@scolarsia.ac.id"
+            }
+
+            // 1. Firebase Auth signInWithEmailAndPassword
+            val signInResult = try {
+                auth.signInWithEmailAndPassword(email, pass).await()
+            } catch (e: FirebaseAuthInvalidUserException) {
+                Log.w("ScolarsiaAuth", "Login gagal: Email/NISN '$email' tidak ditemukan pada Auth Emulator.")
+                throw IllegalStateException("Akun / NISN tidak ditemukan. Silakan periksa kembali.")
+            } catch (e: FirebaseAuthInvalidCredentialsException) {
+                Log.w("ScolarsiaAuth", "Login gagal: Kata sandi untuk '$email' salah.")
+                throw IllegalStateException("Kata sandi yang Anda masukkan salah. Silakan periksa kembali.")
+            } catch (e: TimeoutCancellationException) {
+                val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                Log.e("ScolarsiaAuth", "Login timeout: Tidak bisa menjangkau $targetHost:9099")
+                throw IllegalStateException("Tidak bisa menjangkau $targetHost:9099. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat).")
+            }
+
+            val uid = signInResult.user?.uid ?: throw IllegalStateException("User ID tidak ditemukan pada Firebase Auth.")
+
+            // 2. Fetch profile from Firestore
+            val userProfile = try {
+                getUserProfile(uid)
+            } catch (e: FirebaseFirestoreException) {
+                auth.signOut()
+                val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
+                    throw IllegalStateException("Tidak bisa menjangkau Firestore emulator di $targetHost:8081. Pastikan laptop menyala, satu Wi-Fi, dan port 8081 terbuka (buka-firewall.bat).")
                 } else {
-                    "${identifier.trim()}@scolarsia.ac.id"
+                    throw IllegalStateException("Gagal membaca Firestore: ${e.message} (Kode: ${e.code})")
                 }
-
-                // 1. Firebase Auth signInWithEmailAndPassword
-                val signInResult = auth.signInWithEmailAndPassword(email, pass).await()
-                val uid = signInResult.user?.uid ?: throw IllegalStateException("User ID tidak ditemukan pada Firebase Auth.")
-
-                // 2. Fetch profile from Firestore
-                val userProfile = try {
-                    getUserProfile(uid)
-                } catch (e: FirebaseFirestoreException) {
-                    auth.signOut()
-                    val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
-                    if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                        throw IllegalStateException("Tidak bisa menjangkau Firestore emulator di $targetHost:8081. Pastikan laptop menyala, satu Wi-Fi, dan port 8081 terbuka (buka-firewall.bat).")
-                    } else {
-                        throw IllegalStateException("Gagal membaca Firestore: ${e.message} (Kode: ${e.code})")
-                    }
-                }
-
-                if (userProfile == null) {
-                    auth.signOut()
-                    throw IllegalStateException("Dokumen profil tidak ditemukan (UID: $uid). Akun belum didaftarkan oleh admin sekolah.")
-                }
-
-                // 3. Verify Active Status
-                if (!userProfile.aktif) {
-                    auth.signOut()
-                    throw IllegalStateException("Akun dinonaktifkan. Silakan hubungi administrator sekolah.")
-                }
-
-                // 4. Verify Expected Role
-                val actualRoleNorm = normalizeRole(userProfile.role)
-                val expectedRoleNorm = normalizeRole(expectedRole.name)
-
-                if (actualRoleNorm != expectedRoleNorm) {
-                    auth.signOut()
-                    throw IllegalStateException("Peran tidak cocok (Akun ini mendaftar sebagai $actualRoleNorm, bukan $expectedRoleNorm).")
-                }
-
-                // 5. Track device session in Firestore if context is available
-                context?.let { ctx ->
-                    DeviceSessionManager.saveCurrentSession(ctx, uid)
-                }
-
-                setCachedUser(userProfile)
-                userProfile
             }
-        } catch (e: FirebaseAuthInvalidUserException) {
-            throw IllegalStateException("Akun / NISN tidak ditemukan. Silakan periksa kembali.")
-        } catch (e: FirebaseAuthInvalidCredentialsException) {
-            throw IllegalStateException("Kata sandi yang Anda masukkan salah. Silakan periksa kembali.")
-        } catch (e: TimeoutCancellationException) {
-            val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
-            throw IllegalStateException("Tidak bisa menjangkau $targetHost:9099. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat).")
-        } catch (e: IllegalStateException) {
-            throw e
-        } catch (e: Exception) {
-            // Fallback for emulator offline / dev mode
-            val cleanId = identifier.trim().lowercase()
-            val fallbackUser = when {
-                cleanId.contains("admin") -> User(uid = "admin_01", name = "Arif Setiawan", email = "admin12@scolarsia.ac.id", role = "ADMIN")
-                cleanId.contains("walikelas") || cleanId.contains("wali") -> User(uid = "wali_01", name = "Siti Aminah", email = "walikelas12@scolarsia.ac.id", role = "WALI_KELAS", className = "9-A")
-                cleanId.contains("guru") -> User(uid = "guru_01", name = "Budi Santoso", email = "guru12@scolarsia.ac.id", role = "GURU")
-                cleanId.contains("orangtua") || cleanId.contains("ortu") -> User(uid = "ortu_01", name = "Bapak Ahmad", email = "orangtua12@scolarsia.ac.id", role = "ORANG_TUA", studentIds = listOf("siswa_01"))
-                else -> User(uid = "siswa_01", name = "Ahmad Budi", email = "09231@scolarsia.ac.id", role = "SISWA", className = "9-A")
+
+            if (userProfile == null) {
+                auth.signOut()
+                Log.w("ScolarsiaAuth", "UID: $uid | Dokumen profil tidak ditemukan pada koleksi pengguna/users.")
+                throw IllegalStateException("Dokumen profil tidak ditemukan (UID: $uid). Akun belum didaftarkan oleh admin sekolah.")
             }
-            setCachedUser(fallbackUser)
-            loggedUser = fallbackUser
+
+            // 3. Verify Active Status
+            if (!userProfile.aktif) {
+                auth.signOut()
+                Log.w("ScolarsiaAuth", "UID: $uid | Status akun nonaktif (aktif=false).")
+                throw IllegalStateException("Akun dinonaktifkan. Silakan hubungi administrator sekolah.")
+            }
+
+            // 4. Verify Expected Role
+            val actualRoleNorm = normalizeRole(userProfile.role)
+            val expectedRoleNorm = normalizeRole(expectedRole.name)
+
+            if (actualRoleNorm != expectedRoleNorm) {
+                auth.signOut()
+                Log.w("ScolarsiaAuth", "UID: $uid | Role Firestore: $actualRoleNorm | Role Kartu: $expectedRoleNorm | Keputusan: REJECTED (Role Mismatch)")
+                throw IllegalStateException("Peran tidak cocok (Akun ini mendaftar sebagai ${userProfile.userRole.label}, bukan ${expectedRole.label}).")
+            }
+
+            // 5. Track device session in Firestore if context is available
+            context?.let { ctx ->
+                DeviceSessionManager.saveCurrentSession(ctx, uid)
+            }
+
+            Log.i("ScolarsiaAuth", "UID: $uid | Role Firestore: $actualRoleNorm | Role Kartu: $expectedRoleNorm | Keputusan: SUCCESS")
+            setCachedUser(userProfile)
+            userProfile
         }
-
-        return loggedUser ?: throw IllegalStateException("Gagal memuat profil pengguna")
     }
 
     suspend fun registerTeacher(

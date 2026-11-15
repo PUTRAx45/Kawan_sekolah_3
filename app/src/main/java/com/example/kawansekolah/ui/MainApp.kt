@@ -1,5 +1,6 @@
 package com.example.kawansekolah.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,16 +18,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kawansekolah.BuildConfig
 import com.example.kawansekolah.FirebaseEmulatorHelper
 import com.example.kawansekolah.data.SeedDataHelper
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.data.repository.AuthRepository
 import com.example.kawansekolah.ui.login.LoginScreen
 import com.example.kawansekolah.ui.login.RoleSelectionScreen
 import com.example.kawansekolah.ui.splash.SplashScreen
 import com.example.kawansekolah.ui.theme.ThemeMode
+import com.example.kawansekolah.utils.DeviceSessionManager
 import com.example.kawansekolah.utils.NetworkObserver
 import com.example.kawansekolah.utils.NotificationHelper
 import com.example.kawansekolah.utils.UserSessionManager
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,18 +54,53 @@ fun MainApp(
     var showSplash by remember { mutableStateOf(true) }
     var selectedRoleForLogin by remember { mutableStateOf<UserRole?>(null) }
 
-    // Inisialisasi Emulator & Seed Data
-    LaunchedEffect(Unit) {
-        FirebaseEmulatorHelper.setupEmulators()
-        coroutineScope.launch {
-            SeedDataHelper.seedDatabase()
-        }
-    }
-
-    var isLoggedIn by remember { mutableStateOf(sessionManager.isLoggedIn()) }
+    var isLoggedIn by remember { mutableStateOf(sessionManager.isLoggedIn() || Firebase.auth.currentUser != null) }
     var userDisplayName by remember { mutableStateOf(sessionManager.getUserName()) }
     var userRole by remember { mutableStateOf(sessionManager.getUserRole()) }
     var showLoginSuccessDialog by remember { mutableStateOf(false) }
+
+    var isRestoringSession by remember { mutableStateOf(false) }
+    var sessionRestoreError by remember { mutableStateOf<String?>(null) }
+
+    // Session restoration on startup from auth.currentUser + Firestore
+    val restoreSession: () -> Unit = {
+        val currentUser = Firebase.auth.currentUser
+        if (currentUser != null) {
+            isRestoringSession = true
+            sessionRestoreError = null
+            coroutineScope.launch {
+                try {
+                    val profile = AuthRepository.getUserProfile(currentUser.uid)
+                    if (profile != null) {
+                        val name = profile.name.ifBlank { "Pengguna" }
+                        val role = profile.userRole
+                        userDisplayName = name
+                        userRole = role
+                        sessionManager.saveSession(name, role)
+                        isLoggedIn = true
+                        Log.i("ScolarsiaAuth", "Sesi dipulihkan dari Firestore. UID: ${profile.uid}, Role: ${profile.role}, Name: $name")
+                    } else {
+                        Log.w("ScolarsiaAuth", "Dokumen profil tidak ditemukan pada server untuk UID: ${currentUser.uid}")
+                        sessionRestoreError = "Dokumen profil tidak ditemukan pada server."
+                    }
+                } catch (e: Exception) {
+                    Log.e("ScolarsiaAuth", "Gagal membaca profil dari Firestore: ${e.message}")
+                    sessionRestoreError = "Gagal memuat profil pengguna dari server. Periksa koneksi internet."
+                } finally {
+                    isRestoringSession = false
+                }
+            }
+        }
+    }
+
+    // Inisialisasi Emulator & Restore Session
+    LaunchedEffect(Unit) {
+        FirebaseEmulatorHelper.setupEmulators(context)
+        coroutineScope.launch {
+            SeedDataHelper.seedDatabase()
+        }
+        restoreSession()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Banner Offline
@@ -87,6 +128,37 @@ fun MainApp(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+        }
+
+        // Banner Error Pemulihan Sesi (dengan Tombol Coba Lagi)
+        if (sessionRestoreError != null && isLoggedIn) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = sessionRestoreError ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { restoreSession() },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Coba Lagi", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -130,13 +202,6 @@ fun MainApp(
                                 title = "Login Berhasil 🔔",
                                 message = "Selamat datang kembali, $finalName! Akun ${role.label} Anda terhubung."
                             )
-                        },
-                        onDemoLoginSuccess = { demoName, demoRole ->
-                            sessionManager.saveDemoSession(demoName, demoRole)
-                            userDisplayName = demoName
-                            userRole = demoRole
-                            isLoggedIn = true
-                            showLoginSuccessDialog = true
                         }
                     )
                 }
@@ -147,11 +212,18 @@ fun MainApp(
                     currentThemeMode = currentThemeMode,
                     onThemeModeChange = onThemeModeChange,
                     onLogout = {
-                        sessionManager.clearSession()
-                        isLoggedIn = false
-                        selectedRoleForLogin = null
-                        userDisplayName = "Pengguna"
-                        userRole = UserRole.SISWA
+                        coroutineScope.launch {
+                            val uid = Firebase.auth.currentUser?.uid
+                            uid?.let { DeviceSessionManager.markCurrentSessionInactive(context, it) }
+                            Firebase.auth.signOut()
+                            AuthRepository.clearCache()
+                            sessionManager.clearSession()
+                            isLoggedIn = false
+                            selectedRoleForLogin = null
+                            userDisplayName = "Pengguna"
+                            userRole = UserRole.SISWA
+                            Log.i("ScolarsiaAuth", "Sesi berhasil dibersihkan (Logout).")
+                        }
                     },
                     initialNavigateTo = initialNavigateTo,
                     onNavigateHandled = onNavigateHandled

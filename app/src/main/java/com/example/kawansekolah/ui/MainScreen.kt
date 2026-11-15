@@ -1,22 +1,21 @@
 package com.example.kawansekolah.ui
 
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
 import com.example.kawansekolah.data.model.NotificationItem
 import com.example.kawansekolah.data.model.NotificationType
 import com.example.kawansekolah.data.model.SchoolLevel
 import com.example.kawansekolah.data.model.Subject
 import com.example.kawansekolah.data.model.UserRole
 import com.example.kawansekolah.data.repository.SchoolRepository
-import com.example.kawansekolah.ui.guru.GuruScreen
-import kotlinx.coroutines.delay
 import com.example.kawansekolah.ui.ai.AiScreen
 import com.example.kawansekolah.ui.beranda.BerandaScreen
 import com.example.kawansekolah.ui.components.BottomNavigationBar
@@ -26,11 +25,14 @@ import com.example.kawansekolah.ui.feature_nilai.UnggahCsvScreen
 import com.example.kawansekolah.ui.feature_notifikasi.NotificationBottomSheet
 import com.example.kawansekolah.ui.feature_statistik.StatistikScreen
 import com.example.kawansekolah.ui.feature_wali.RekapNilaiScreen
+import com.example.kawansekolah.ui.guru.GuruScreen
 import com.example.kawansekolah.ui.nilai.NilaiScreen
 import com.example.kawansekolah.ui.pelajaran.PelajaranScreen
-import com.example.kawansekolah.ui.pelajaran.components.SubjectDetailBottomSheet
 import com.example.kawansekolah.ui.profil.ProfilScreen
 import com.example.kawansekolah.ui.theme.ThemeMode
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +47,35 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val isKeyboardOpen = WindowInsets.isImeVisible
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // BackHandler di Beranda agar menekan Back tidak kembali ke Login / Role Selection
+    val isBerandaRoute = currentRoute == "beranda" || currentRoute == "admin_beranda"
+    BackHandler(enabled = isBerandaRoute) {
+        Log.d("ScolarsiaAuth", "BackHandler di Beranda aktif: Menahan tombol Back agar tidak keluar dari akun.")
+    }
+
+    // Guard Navigasi Antar Peran (Admin vs Non-Admin)
+    val adminRoutes = remember { setOf("admin_beranda", "admin_pengguna", "admin_akademik", "admin_penugasan_guru", "admin_profil", "admin_detail_akun", "admin_daftar_akun", "admin_impor_csv") }
+
+    LaunchedEffect(currentRoute, userRole) {
+        if (currentRoute != null) {
+            val isAdminRoute = adminRoutes.contains(currentRoute)
+            if (userRole == UserRole.ADMIN && !isAdminRoute && currentRoute != "ubah_kata_sandi" && currentRoute != "privasi_notifikasi" && currentRoute != "perangkat_sesi") {
+                Log.w("ScolarsiaAuth", "Navigasi Ditolak: User ADMIN mencoba mengakses route '$currentRoute'. Mengarahkan kembali ke admin_beranda.")
+                navController.navigate("admin_beranda") {
+                    popUpTo(0) { inclusive = true }
+                }
+            } else if (userRole != UserRole.ADMIN && isAdminRoute) {
+                Log.w("ScolarsiaAuth", "Navigasi Ditolak: User ${userRole.name} dilarang mengakses route ADMIN '$currentRoute'. Mengarahkan kembali ke beranda.")
+                navController.navigate("beranda") {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+    }
 
     LaunchedEffect(initialNavigateTo) {
         if (!initialNavigateTo.isNullOrBlank()) {
@@ -150,23 +181,6 @@ fun MainScreen(
 
     val toggleTask: (Int) -> Unit = { taskId ->
         tasks = tasks.map { if (it.id == taskId) it.copy(isChecked = !it.isChecked) else it }
-    }
-
-    val toggleModule: (Subject, Int) -> Unit = { targetSubject, moduleId ->
-        subjects = subjects.map { subject ->
-            if (subject.name == targetSubject.name) {
-                val updatedModules = subject.modules.map { module ->
-                    if (module.id == moduleId) module.copy(isCompleted = !module.isCompleted) else module
-                }
-                val updatedSubject = subject.copy(modules = updatedModules)
-                if (selectedSubjectForDetail?.name == updatedSubject.name) {
-                    selectedSubjectForDetail = updatedSubject
-                }
-                updatedSubject
-            } else {
-                subject
-            }
-        }
     }
 
     val updateGrade: (String, Double, Int, String, String, Int, Int, Int, Int) -> Unit = { subjectName, score, semester, conduct, notes, hadir, izin, sakit, alpa ->
@@ -307,7 +321,7 @@ fun MainScreen(
                 ProfilScreen(
                     userName = userName,
                     userRole = userRole.name,
-                    userEmail = "user@scolarsia.sch.id",
+                    userEmail = Firebase.auth.currentUser?.email ?: "user@scolarsia.sch.id",
                     onLogoutClick = onLogout,
                     onUbahKataSandiClick = { navController.navigate("ubah_kata_sandi") },
                     onPrivasiNotifikasiClick = { navController.navigate("privasi_notifikasi") },
@@ -327,7 +341,7 @@ fun MainScreen(
             composable("perangkat_sesi") {
                 com.example.kawansekolah.ui.profil.PerangkatSesiScreen(onBackClick = { navController.popBackStack() })
             }
-            // ADMIN ROUTES (Image 3 Mockups)
+            // ADMIN ROUTES
             composable("admin_beranda") {
                 com.example.kawansekolah.ui.admin.AdminBerandaScreen(
                     userName = userName,
@@ -381,69 +395,17 @@ fun MainScreen(
             }
             composable("admin_impor_csv") {
                 com.example.kawansekolah.ui.admin.AdminImporCsvScreen(
-                    onBackClick = { navController.popBackStack() },
-                    onValidateSuccess = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
     }
 
-    // Detail Bottom Sheet
-    selectedSubjectForDetail?.let { subject ->
-        SubjectDetailBottomSheet(
-            subject = subject,
-            onDismiss = { selectedSubjectForDetail = null },
-            onToggleModule = { moduleId -> toggleModule(subject, moduleId) }
-        )
-    }
-
-    // Notification Bottom Sheet
     if (showNotificationSheet) {
-        if (userRole == UserRole.GURU || userRole == UserRole.WALI_KELAS) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    markAllNotificationsAsRead()
-                    showNotificationSheet = false
-                },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                com.example.kawansekolah.ui.feature_wali.WaliNotifikasiScreen(
-                    notifications = activeNotifications,
-                    nowMillis = nowMillis,
-                    onNotificationClick = { item ->
-                        markAllNotificationsAsRead()
-                        showNotificationSheet = false
-                    },
-                    onBackClick = {
-                        markAllNotificationsAsRead()
-                        showNotificationSheet = false
-                    }
-                )
-            }
-        } else {
-            NotificationBottomSheet(
-                notifications = activeNotifications,
-                nowMillis = nowMillis,
-                onDismiss = {
-                    markAllNotificationsAsRead()
-                    showNotificationSheet = false
-                },
-                onClearAll = {
-                    clearAllNotifications()
-                },
-                onNotificationClick = { item ->
-                    markAllNotificationsAsRead()
-                    showNotificationSheet = false
-                    if (item.type == NotificationType.AI || item.type == NotificationType.AI_RUNNING) {
-                        navController.navigate("ai") {
-                            popUpTo("beranda") { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                }
-            )
-        }
+        NotificationBottomSheet(
+            notifications = activeNotifications,
+            onDismiss = { showNotificationSheet = false },
+            onClearAll = clearAllNotifications
+        )
     }
 }
