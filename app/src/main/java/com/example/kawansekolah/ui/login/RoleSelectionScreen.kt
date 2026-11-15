@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,10 +24,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.example.kawansekolah.BuildConfig
+import com.example.kawansekolah.FirebaseEmulatorHelper
 import com.example.kawansekolah.R
 import com.example.kawansekolah.data.model.UserRole
+import com.example.kawansekolah.ui.theme.PrimaryBlue
+import com.example.kawansekolah.utils.DevHost
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun RoleSelectionScreen(
@@ -33,10 +44,16 @@ fun RoleSelectionScreen(
     onAdminClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     BackHandler {
         (context as? Activity)?.finish()
     }
+
+    var showServerConfigDialog by remember { mutableStateOf(false) }
+    var serverHostInput by remember { mutableStateOf(DevHost.getHost(context)) }
+    var testResultMsg by remember { mutableStateOf("") }
+    var isTestingConnection by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -45,6 +62,7 @@ fun RoleSelectionScreen(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
+        // Main Content Column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -158,6 +176,132 @@ fun RoleSelectionScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
         }
+
+        // Gear Icon Button at Top Right (Debug Only) - Placed AFTER Column with zIndex(10f) so it receives clicks
+        if (BuildConfig.DEBUG) {
+            IconButton(
+                onClick = {
+                    serverHostInput = DevHost.getHost(context)
+                    testResultMsg = ""
+                    showServerConfigDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .zIndex(10f)
+                    .padding(12.dp)
+                    .size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Pengaturan Alamat Server",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+
+    // Dialog Konfigurasi & Tes Alamat Server
+    if (showServerConfigDialog) {
+        AlertDialog(
+            onDismissRequest = { showServerConfigDialog = false },
+            title = {
+                Text("Konfigurasi Alamat Server", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Masukkan IP Wi-Fi laptop (hanya angka & titik, misal: 192.168.1.4) atau 10.0.2.2 untuk Android Emulator:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = serverHostInput,
+                        onValueChange = { input ->
+                            serverHostInput = input.filter { c -> c.isDigit() || c == '.' }
+                        },
+                        label = { Text("IP Laptop / Host") },
+                        placeholder = { Text("192.168.1.4") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (testResultMsg.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (testResultMsg.contains("OK")) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = testResultMsg,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (testResultMsg.contains("OK")) Color(0xFF166534) else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            isTestingConnection = true
+                            testResultMsg = "⏳ Memeriksa status kesehatan server di ${serverHostInput.trim()}..."
+                            coroutineScope.launch {
+                                val targetHost = serverHostInput.trim().ifBlank { "10.0.2.2" }
+                                val healthUrl = "http://$targetHost:3000/health"
+                                try {
+                                    val res = withContext(Dispatchers.IO) {
+                                        val url = java.net.URL(healthUrl)
+                                        val conn = url.openConnection() as java.net.HttpURLConnection
+                                        conn.connectTimeout = 3000
+                                        conn.readTimeout = 3000
+                                        conn.connect()
+                                        val code = conn.responseCode
+                                        if (code == 200) {
+                                            "✅ Backend: OK | Auth (9099): OK | Firestore (8081): OK"
+                                        } else {
+                                            "⚠️ Backend HTTP $code: Periksa emulator suite"
+                                        }
+                                    }
+                                    testResultMsg = res
+                                } catch (_: Exception) {
+                                    testResultMsg = "❌ Tidak bisa menjangkau $targetHost. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat)."
+                                } finally {
+                                    isTestingConnection = false
+                                }
+                            }
+                        },
+                        enabled = !isTestingConnection,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(if (isTestingConnection) "Memeriksa..." else "Tes Koneksi (port 3000)", fontSize = 13.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val cleanHost = serverHostInput.trim()
+                        DevHost.saveDynamicHost(context, cleanHost)
+                        FirebaseEmulatorHelper.setupEmulators(true, cleanHost)
+                        showServerConfigDialog = false
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Text("Simpan & Terapkan", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showServerConfigDialog = false }) {
+                    Text("Batal")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 }
 

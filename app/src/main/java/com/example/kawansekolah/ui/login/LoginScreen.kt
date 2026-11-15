@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kawansekolah.BuildConfig
 import com.example.kawansekolah.FirebaseEmulatorHelper
@@ -137,26 +138,7 @@ fun LoginScreen(
             .navigationBarsPadding()
             .imePadding()
     ) {
-        // Gear Icon Button at Top Right (Debug Only)
-        if (BuildConfig.DEBUG) {
-            IconButton(
-                onClick = {
-                    serverHostInput = DevHost.getHost(context)
-                    testResultMsg = ""
-                    showServerConfigDialog = true
-                },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Pengaturan Alamat Server",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
+        // Main Scrollable Content Column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -361,6 +343,28 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+
+        // Gear Icon Button at Top Right (Debug Only) - Placed AFTER Column with zIndex(10f) so it receives touch events
+        if (BuildConfig.DEBUG) {
+            IconButton(
+                onClick = {
+                    serverHostInput = DevHost.getHost(context)
+                    testResultMsg = ""
+                    showServerConfigDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .zIndex(10f)
+                    .padding(12.dp)
+                    .size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Pengaturan Alamat Server",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 
     // Dialog Konfigurasi & Tes Alamat Server
@@ -373,16 +377,19 @@ fun LoginScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Masukkan IP Wi-Fi laptop (misal: 192.168.1.10) atau 10.0.2.2 untuk Android Emulator:",
+                        text = "Masukkan IP Wi-Fi laptop (hanya angka & titik, misal: 192.168.1.4) atau 10.0.2.2 untuk Android Emulator:",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     OutlinedTextField(
                         value = serverHostInput,
-                        onValueChange = { serverHostInput = it },
+                        onValueChange = { input ->
+                            serverHostInput = input.filter { c -> c.isDigit() || c == '.' }
+                        },
                         label = { Text("IP Laptop / Host") },
-                        placeholder = { Text("192.168.1.x atau 10.0.2.2") },
+                        placeholder = { Text("192.168.1.4") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
@@ -426,7 +433,7 @@ fun LoginScreen(
                                         }
                                     }
                                     testResultMsg = res
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     testResultMsg = "❌ Tidak bisa menjangkau $targetHost. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat)."
                                 } finally {
                                     isTestingConnection = false
@@ -447,6 +454,7 @@ fun LoginScreen(
                         val cleanHost = serverHostInput.trim()
                         DevHost.saveDynamicHost(context, cleanHost)
                         FirebaseEmulatorHelper.setupEmulators(true, cleanHost)
+                        errorMessage = "" // Clears error message immediately!
                         showServerConfigDialog = false
                     },
                     shape = RoundedCornerShape(10.dp),
