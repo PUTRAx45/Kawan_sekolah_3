@@ -1,6 +1,6 @@
 # Dokumentasi & Panduan Terpusat Proyek Scolarsia
 
-Seluruh berkas catatan, panduan, dan dokumentasi proyek disimpan secara terpusat di direktori ini (`app/READMETEKS_IMPLEMENTASION/`).
+Seluruh berkas catatan, panduan, dan dokumentasi proyek disimpan secara terpusat di direktori ini (`app/sampledata/READMETEKS_IMPLEMENTASION/`).
 
 ---
 
