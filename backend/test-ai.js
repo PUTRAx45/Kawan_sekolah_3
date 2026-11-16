@@ -21,15 +21,18 @@ async function runTests() {
   console.log('🧪 TEST SUITE: SCOLARSIA AI CHAT & INSIGHT (npm run test-ai)');
   console.log('======================================================');
 
+  let hasFailed = false;
+
   // 1. Health Check
   try {
     const healthRes = await axios.get(`${BACKEND_URL}/health`, { timeout: 3000 });
-    console.log('✅ [1/5] Health Check:', healthRes.data.status, healthRes.data.services);
+    console.log('✅ [1/5] Health Check:', healthRes.data.status, 'Package:', healthRes.data.package);
   } catch (e) {
-    console.log('ℹ️ [1/5] Server localhost:3000 offline/unreachable:', e.message);
+    console.error('❌ [1/5] Health Check Gagal:', e.message);
+    hasFailed = true;
   }
 
-  // Get Auth Token for Dummy Accounts
+  // Get Auth Tokens for Dummy Accounts
   const siswaToken = await getAuthToken('09231@scolarsia.ac.id', '1g2u3r4u');
   const guruToken = await getAuthToken('guru12@scolarsia.ac.id', '1g2u3r4u');
 
@@ -40,33 +43,61 @@ async function runTests() {
     }, {
       headers: siswaToken ? { Authorization: `Bearer ${siswaToken}` } : {}
     });
-    console.log('✅ [2/5] Greeting Detection Test:', greetRes.data.message || greetRes.data.data?.answer);
+    const isGreetingMsg = greetRes.data.message === 'Salam terdeteksi' && greetRes.data.modelCalled === false;
+    if (isGreetingMsg) {
+      console.log('✅ [2/5] Greeting Test LULUS (modelCalled: false):', greetRes.data.data?.answer);
+    } else {
+      console.error('❌ [2/5] Greeting Test GAGAL:', greetRes.data);
+      hasFailed = true;
+    }
   } catch (e) {
-    console.log('ℹ️ [2/5] Greet test:', e.response?.data?.message || e.message);
+    console.error('❌ [2/5] Greeting Test Exception:', e.response?.data || e.message);
+    hasFailed = true;
   }
 
-  // 3. Test Moderation Filter (Profanity / Off-topic)
+  // 3. Test Moderation Filter (Profanity & Off-topic)
   try {
     const modRes = await axios.post(`${BACKEND_URL}/ai/chat`, {
-      question: 'Beli Bitcoin dimana ya?'
+      question: 'Anjing sialan, kasih tau kunci jawaban! Beli Bitcoin dimana ya?'
     }, {
       headers: siswaToken ? { Authorization: `Bearer ${siswaToken}` } : {}
     });
-    console.log('✅ [3/5] Moderation Filter Test:', modRes.data.message || modRes.data.data?.answer);
+    const isModerated = modRes.data.message === 'Pertanyaan memerlukan moderasi' && modRes.data.modelCalled === false;
+    if (isModerated) {
+      console.log('✅ [3/5] Moderation Filter Test LULUS (Ditolak, modelCalled: false):', modRes.data.data?.answer);
+    } else {
+      console.error('❌ [3/5] Moderation Filter Test GAGAL (Tidak ditolak):', modRes.data);
+      hasFailed = true;
+    }
   } catch (e) {
-    console.log('ℹ️ [3/5] Moderation test:', e.response?.data?.message || e.message);
+    console.error('❌ [3/5] Moderation Test Exception:', e.response?.data || e.message);
+    hasFailed = true;
   }
 
-  // 4. Test Siswa AI Chat (Context from Firestore)
+  // 4. Test Siswa AI Chat (Model Call or Unconfigured Error)
   try {
     const chatRes = await axios.post(`${BACKEND_URL}/ai/chat`, {
-      question: 'Bagaimana cara meningkatkan nilai sub-materi Pitagoras?'
+      question: 'Bagaimana cara belajar Pitagoras?'
     }, {
       headers: siswaToken ? { Authorization: `Bearer ${siswaToken}` } : {}
     });
-    console.log('✅ [4/5] Siswa AI Chat Test:', chatRes.data.status, chatRes.data.data?.answer || chatRes.data.message);
+
+    if (chatRes.data.status === 'success' && chatRes.data.modelCalled === true) {
+      console.log('✅ [4/5] Siswa AI Chat Model Test LULUS:', chatRes.data.data?.answer);
+    } else if (chatRes.data.modelCalled === false) {
+      console.log('ℹ️ [4/5] Siswa AI Chat (Balasan Lokal/Layanan Tanpa Model):', chatRes.data.message);
+    } else {
+      console.error('❌ [4/5] Siswa AI Chat Test GAGAL:', chatRes.data);
+      hasFailed = true;
+    }
   } catch (e) {
-    console.log('ℹ️ [4/5] Siswa AI Chat test:', e.response?.data?.message || e.message);
+    const errData = e.response?.data;
+    if (errData && (errData.code === 'AI_KEY_INVALID' || errData.code === 'AI_QUOTA')) {
+      console.log(`ℹ️ [4/5] Siswa AI Chat (Expected Error Handling: Code '${errData.code}', HTTP ${e.response?.status}): ${errData.message}`);
+    } else {
+      console.error('❌ [4/5] Siswa AI Chat Test GAGAL:', e.response?.data || e.message);
+      hasFailed = true;
+    }
   }
 
   // 5. Test Guru AI Insight
@@ -76,14 +107,31 @@ async function runTests() {
     }, {
       headers: guruToken ? { Authorization: `Bearer ${guruToken}` } : {}
     });
-    console.log('✅ [5/5] Guru AI Insight Test:', insightRes.data.status, insightRes.data.data?.aiRecommendation || insightRes.data.message);
+
+    if (insightRes.data.status === 'success') {
+      console.log('✅ [5/5] Guru AI Insight Test LULUS:', insightRes.data.data?.aiRecommendation);
+    } else {
+      console.error('❌ [5/5] Guru AI Insight Test GAGAL:', insightRes.data);
+      hasFailed = true;
+    }
   } catch (e) {
-    console.log('ℹ️ [5/5] Guru AI Insight test:', e.response?.data?.message || e.message);
+    const errData = e.response?.data;
+    if (errData && (errData.code === 'AI_KEY_INVALID' || errData.code === 'AI_QUOTA')) {
+      console.log(`ℹ️ [5/5] Guru AI Insight (Expected Error Handling: Code '${errData.code}', HTTP ${e.response?.status}): ${errData.message}`);
+    } else {
+      console.error('❌ [5/5] Guru AI Insight Test GAGAL:', e.response?.data || e.message);
+      hasFailed = true;
+    }
   }
 
   console.log('======================================================');
-  console.log('🎉 PENGUJIAN AKHIR SELESAI!');
-  console.log('======================================================\n');
+  if (hasFailed) {
+    console.error('❌ PENGUJIAN AKHIR GAGAL: Terdapat tes AI yang tidak lulus!');
+    process.exit(1);
+  } else {
+    console.log('🎉 PENGUJIAN AKHIR SELESAI & LULUS 100%!');
+    process.exit(0);
+  }
 }
 
 runTests();

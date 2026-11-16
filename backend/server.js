@@ -252,6 +252,7 @@ const handleAiRequest = async (req, res) => {
       if (greetingReply) {
         return res.json({
           status: 'success',
+          modelCalled: false,
           message: 'Salam terdeteksi',
           data: {
             answer: greetingReply,
@@ -265,6 +266,7 @@ const handleAiRequest = async (req, res) => {
       if (moderationResult && moderationResult.flagged) {
         return res.json({
           status: 'success',
+          modelCalled: false,
           message: 'Pertanyaan memerlukan moderasi',
           data: {
             answer: moderationResult.reason || 'Maaf, mari tetap fokus membahas materi pelajaran, nilai, dan strategi belajar Anda.',
@@ -314,6 +316,7 @@ const handleAiRequest = async (req, res) => {
     if (!gradesSnapshot || gradesSnapshot.empty) {
       return res.json({
         status: 'success',
+        modelCalled: false,
         message: 'Belum ada data nilai yang cukup untuk analisis AI',
         data: {
           answer: 'Belum ada data nilai yang cukup untuk analisis AI',
@@ -329,6 +332,7 @@ const handleAiRequest = async (req, res) => {
     if (validScores.length === 0) {
       return res.json({
         status: 'success',
+        modelCalled: false,
         message: 'Belum ada data nilai yang cukup untuk analisis AI',
         data: {
           answer: 'Belum ada data nilai yang cukup untuk analisis AI',
@@ -356,6 +360,7 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
       if (isKeyPlaceholder(apiKey)) {
         return res.status(502).json({
           status: 'error',
+          modelCalled: false,
           code: 'AI_KEY_INVALID',
           message: 'AI belum dikonfigurasi atau kunci tidak valid'
         });
@@ -373,6 +378,7 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
 
       return res.json({
         status: 'success',
+        modelCalled: true,
         message: 'Respons AI Scolarsia berhasil diproses',
         data: {
           answer: aiReply,
@@ -386,6 +392,7 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
       const publicMsg = aiErr.publicMessage || aiErr.message || 'AI belum dikonfigurasi atau kunci tidak valid';
       return res.status(statusCode).json({
         status: 'error',
+        modelCalled: false,
         code: code,
         message: publicMsg
       });
