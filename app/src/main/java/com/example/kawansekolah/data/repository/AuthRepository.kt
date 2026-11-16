@@ -3,21 +3,26 @@ package com.example.kawansekolah.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.kawansekolah.BuildConfig
+import com.example.kawansekolah.FirebaseEmulatorHelper
 import com.example.kawansekolah.data.model.FirestoreCollections
 import com.example.kawansekolah.data.model.User
 import com.example.kawansekolah.data.model.UserRole
 import com.example.kawansekolah.utils.DeviceSessionManager
+import com.example.kawansekolah.utils.DevHost
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 object AuthRepository {
@@ -56,7 +61,7 @@ object AuthRepository {
             val secAuth = FirebaseAuth.getInstance(app)
             if (BuildConfig.USE_EMULATOR) {
                 try {
-                    secAuth.useEmulator(com.example.kawansekolah.utils.DevHost.getHost().ifBlank { "10.0.2.2" }, 9099)
+                    secAuth.useEmulator(DevHost.getHost().ifBlank { "10.0.2.2" }, 9099)
                 } catch (_: Exception) {}
             }
             secondaryAuth = secAuth
@@ -130,6 +135,39 @@ object AuthRepository {
         }
     }
 
+    /**
+     * Diagnostic function to directly test Auth Emulator REST API over HTTP from HP
+     */
+    suspend fun testRestAuthDirect(targetHost: String, email: String, pass: String): Pair<Int, String> {
+        return withContext(Dispatchers.IO) {
+            val hostStr = targetHost.ifBlank { "10.0.2.2" }
+            val urlStr = "http://$hostStr:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake"
+            try {
+                val url = java.net.URL(urlStr)
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.connectTimeout = 3000
+                conn.readTimeout = 3000
+                conn.doOutput = true
+
+                val jsonBody = "{\"email\":\"$email\",\"password\":\"$pass\",\"returnSecureToken\":true}"
+                conn.outputStream.use { os -> os.write(jsonBody.toByteArray()) }
+
+                val code = conn.responseCode
+                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                val reply = stream?.bufferedReader()?.use { it.readText() } ?: ""
+                val snippet = reply.take(200).replace("\n", " ")
+
+                Log.i("ScolarsiaNet", "🔬 [REST Auth Direct Test] Host: $hostStr:9099 | Email: $email | Status: $code | Reply (200 char): \"$snippet\"")
+                Pair(code, snippet)
+            } catch (e: Exception) {
+                Log.e("ScolarsiaNet", "🔬 [REST Auth Direct Test Error] Host: $hostStr:9099 | Exception: ${e.javaClass.simpleName} (${e.message})")
+                Pair(0, "Gagal koneksi REST: ${e.message}")
+            }
+        }
+    }
+
     suspend fun loginWithEmailOrNis(
         identifier: String,
         pass: String,
@@ -143,9 +181,39 @@ object AuthRepository {
                 "${identifier.trim()}@scolarsia.ac.id"
             }
 
+            val appOptions = try { FirebaseApp.getInstance().options } catch (_: Exception) { null }
+            val activeProjectId = appOptions?.projectId ?: "Unknown"
+            val apiKeyPrefix = (appOptions?.apiKey ?: "").take(6)
+            val currentHost = DevHost.getHost(context)
+            val isApplied = FirebaseEmulatorHelper.isEmulatorConfigured
+
+            Log.i("ScolarsiaAuth", "======================================================")
+            Log.i("ScolarsiaAuth", "🔑 MEMULAI SIGN IN FIREBASE AUTH:")
+            Log.i("ScolarsiaAuth", "   Email Target : $email")
+            Log.i("ScolarsiaAuth", "   Project ID   : '$activeProjectId'")
+            Log.i("ScolarsiaAuth", "   API Key 6-char: '$apiKeyPrefix...'")
+            Log.i("ScolarsiaAuth", "   Host Target  : '$currentHost:9099'")
+            Log.i("ScolarsiaAuth", "   useEmulator  : $isApplied")
+            Log.i("ScolarsiaAuth", "======================================================")
+
             // 1. Firebase Auth signInWithEmailAndPassword
             val signInResult = try {
                 auth.signInWithEmailAndPassword(email, pass).await()
+            } catch (e: FirebaseAuthException) {
+                val excName = e.javaClass.simpleName
+                val errorCode = e.errorCode
+                val msg = e.message ?: ""
+                val stackSnippet = e.stackTrace.take(3).joinToString("\n   at ")
+
+                Log.e("ScolarsiaAuth", "❌ [FirebaseAuthException] Class: $excName | Code: $errorCode | Message: $msg")
+                Log.e("ScolarsiaAuth", "   ProjectID: '$activeProjectId' | APIKey: '$apiKeyPrefix...' | Host: '$currentHost:9099' | emulatorApplied: $isApplied")
+                Log.e("ScolarsiaAuth", "   Stack: at $stackSnippet")
+
+                if (errorCode == "ERROR_CONFIGURATION_NOT_FOUND" || msg.contains("CONFIGURATION_NOT_FOUND")) {
+                    throw IllegalStateException("Konfigurasi Auth tidak ditemukan [CONFIGURATION_NOT_FOUND]. Terhubung ke Firebase Cloud Produksi karena useEmulator belum dipanggil untuk host '$currentHost'. Atur IP server via ikon ⚙️.")
+                }
+
+                throw IllegalStateException("Gagal masuk Auth ($errorCode): $msg")
             } catch (e: FirebaseAuthInvalidUserException) {
                 Log.w("ScolarsiaAuth", "Login gagal: Email/NISN '$email' tidak ditemukan pada Auth Emulator.")
                 throw IllegalStateException("Akun / NISN tidak ditemukan. Silakan periksa kembali.")
@@ -153,9 +221,12 @@ object AuthRepository {
                 Log.w("ScolarsiaAuth", "Login gagal: Kata sandi untuk '$email' salah.")
                 throw IllegalStateException("Kata sandi yang Anda masukkan salah. Silakan periksa kembali.")
             } catch (e: TimeoutCancellationException) {
-                val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                val targetHost = DevHost.getHost(context).ifBlank { "10.0.2.2" }
                 Log.e("ScolarsiaAuth", "Login timeout: Tidak bisa menjangkau $targetHost:9099")
                 throw IllegalStateException("Tidak bisa menjangkau $targetHost:9099. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat).")
+            } catch (e: Exception) {
+                Log.e("ScolarsiaAuth", "❌ [Login Exception] Class: ${e.javaClass.simpleName} | Message: ${e.message}")
+                throw IllegalStateException("Gagal masuk Auth: ${e.message}")
             }
 
             val uid = signInResult.user?.uid ?: throw IllegalStateException("User ID tidak ditemukan pada Firebase Auth.")
@@ -165,7 +236,7 @@ object AuthRepository {
                 getUserProfile(uid)
             } catch (e: FirebaseFirestoreException) {
                 auth.signOut()
-                val targetHost = com.example.kawansekolah.utils.DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                val targetHost = DevHost.getHost(context).ifBlank { "10.0.2.2" }
                 if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
                     throw IllegalStateException("Tidak bisa menjangkau Firestore emulator di $targetHost:8081. Pastikan laptop menyala, satu Wi-Fi, dan port 8081 terbuka (buka-firewall.bat).")
                 } else {
