@@ -19,23 +19,26 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-const app = express();
-
-// 1. Set Trust Proxy untuk hosting reverse proxy
-app.set('trust proxy', 1);
-
-app.use(cors());
-app.use(express.json({ limit: '1mb' }));
-
-// 2. Inisialisasi Firebase Admin
-const isEmulatorMode = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST);
-
-if (isEmulatorMode) {
+// 1. Ensure Emulator Default Env Vars for Non-Production
+if (process.env.NODE_ENV !== 'production') {
   process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
-  process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
+  process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8081';
+  process.env.GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || 'demo-kawansekolah';
 }
 
-let firebaseModeLabel = 'Firebase Cloud Produksi';
+const isEmulatorMode = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST);
+const projectId = process.env.GCLOUD_PROJECT || 'demo-kawansekolah';
+
+// Reject start if demo project ID is used without emulator active
+if (projectId.startsWith('demo-') && !isEmulatorMode) {
+  console.error(`\n❌ ERROR KRITIS: Project ID '${projectId}' adalah ID emulator lokal.`);
+  console.error(`❌ Tidak dapat dijalankan pada mode Firebase Cloud Produksi tanpa emulator active!\n`);
+  process.exit(1);
+}
+
+let firebaseModeLabel = isEmulatorMode
+  ? `Firebase Emulator (Local Debug - ${projectId})`
+  : 'Firebase Cloud Produksi';
 
 if (!admin.apps.length) {
   const saEnv = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
@@ -55,22 +58,20 @@ if (!admin.apps.length) {
       credential: admin.credential.cert(serviceAccount)
     });
     firebaseModeLabel = 'Firebase Cloud Produksi (Service Account)';
-  } else if (isEmulatorMode) {
-    admin.initializeApp({
-      projectId: process.env.GCLOUD_PROJECT || 'demo-kawansekolah'
-    });
-    firebaseModeLabel = 'Firebase Emulator (Local Debug - demo-kawansekolah)';
   } else {
-    if (process.env.NODE_ENV === 'production') {
-      console.error('❌ KRITIS: FIREBASE_SERVICE_ACCOUNT_JSON wajib diisi pada mode produksi!');
-      process.exit(1);
-    }
     admin.initializeApp({
-      projectId: process.env.GCLOUD_PROJECT || 'demo-kawansekolah'
+      projectId: projectId
     });
-    firebaseModeLabel = 'Firebase Cloud Produksi (Default Credentials)';
   }
 }
+
+const app = express();
+
+// Set Trust Proxy untuk hosting reverse proxy
+app.set('trust proxy', 1);
+
+app.use(cors());
+app.use(express.json({ limit: '1mb' }));
 
 // Warm-up Firebase Admin untuk mempercepat verifikasi token pertama
 async function warmUpFirebaseAdmin() {
@@ -85,7 +86,7 @@ async function warmUpFirebaseAdmin() {
   }
 }
 
-// 3. Rate Limiter (Maksimal 30 request per menit per UID/IP)
+// Rate Limiter
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 30,
@@ -190,7 +191,7 @@ async function callOpenRouter(messages, temperature = 0.4, maxTokens = 500, resp
   const baseUrl = (process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions').trim();
 
   if (isKeyPlaceholder(apiKey)) {
-    throw { statusCode: 500, publicMessage: 'API Key OpenRouter/AI belum dikonfigurasi di file .env server.' };
+    throw { statusCode: 502, code: 'AI_KEY_INVALID', publicMessage: 'AI belum dikonfigurasi atau kunci tidak valid' };
   }
 
   const payload = {
@@ -226,14 +227,14 @@ async function callOpenRouter(messages, temperature = 0.4, maxTokens = 500, resp
     const duration = Date.now() - startTime;
     console.error(`[OpenRouter Error ${status || 'NET'}] Gagal setelah ${duration}ms:`, error.message);
 
-    if (status === 401) {
-      throw { statusCode: 401, publicMessage: 'API Key OpenRouter tidak valid atau telah kedaluwarsa (HTTP 401).' };
+    if (status === 401 || status === 403) {
+      throw { statusCode: 502, code: 'AI_KEY_INVALID', publicMessage: 'AI belum dikonfigurasi atau kunci tidak valid' };
     } else if (status === 402) {
-      throw { statusCode: 402, publicMessage: 'Kuota AI OpenRouter telah habis (HTTP 402).' };
+      throw { statusCode: 502, code: 'AI_QUOTA', publicMessage: 'Kuota AI Analytics telah habis (HTTP 502). Silakan periksa akun OpenRouter Anda.' };
     } else if (status === 429) {
-      throw { statusCode: 429, publicMessage: 'Permintaan AI terlalu padat. Silakan coba beberapa saat lagi (HTTP 429).' };
+      throw { statusCode: 503, code: 'AI_RATE_LIMIT', publicMessage: 'Permintaan AI terlalu padat. Silakan tunggu sebentar dan coba lagi.' };
     }
-    throw error;
+    throw { statusCode: 503, code: 'AI_UNAVAILABLE', publicMessage: 'Layanan AI saat ini tidak dapat dijangkau. Silakan coba beberapa saat lagi.' };
   }
 }
 
@@ -310,7 +311,6 @@ const handleAiRequest = async (req, res) => {
     } catch (_) {}
 
     // 5. Check Grade Data Availability Requirement:
-    // If no grades found in Firestore, return requirement message immediately WITHOUT calling OpenRouter AI model!
     if (!gradesSnapshot || gradesSnapshot.empty) {
       return res.json({
         status: 'success',
@@ -393,7 +393,8 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Terjadi kendala pada layanan AI.'
+      code: 'SERVER_ERROR',
+      message: error.message || 'Terjadi kendala pada server.'
     });
   }
 };
@@ -587,6 +588,9 @@ app.get('/health/detail', async (req, res) => {
     status: isHealthy ? 'UP' : 'DEGRADED',
     package: `${pkg.name}@${pkg.version}`,
     cwd: process.cwd(),
+    firebaseMode: firebaseModeLabel,
+    authHost: process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
+    firestoreHost: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8081',
     timestamp: new Date().toISOString(),
     services: {
       backend: 'UP',

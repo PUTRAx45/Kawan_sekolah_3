@@ -56,20 +56,20 @@ object FirebaseEmulatorHelper {
         useEmulator: Boolean = BuildConfig.USE_EMULATOR,
         overrideHost: String? = null
     ) {
-        if (!useEmulator || isEmulatorConfigured) {
-            val hostStr = if (configuredHost.isNotBlank()) configuredHost else DevHost.getHost(context)
-            Log.i("ScolarsiaNet", "Auth -> $hostStr:9099, Firestore -> $hostStr:8081, Backend -> $hostStr:3000, emulatorApplied=$isEmulatorConfigured")
-            return
-        }
-
-        val host = overrideHost ?: DevHost.getHost(context)
+        val (host, hostSource) = if (overrideHost != null) Pair(overrideHost, "Override Dialog") else DevHost.getHostWithSource(context)
         val targetHost = host.trim().ifBlank {
             if (isPhysicalDevice()) "" else "10.0.2.2"
         }
 
+        if (!useEmulator || isEmulatorConfigured) {
+            val hostStr = if (configuredHost.isNotBlank()) configuredHost else targetHost
+            Log.i("ScolarsiaNet", "Auth -> $hostStr:9099, Firestore -> $hostStr:8081, Backend -> $hostStr:3000, emulatorApplied=$isEmulatorConfigured (Source: $hostSource)")
+            return
+        }
+
         if (isPhysicalDevice() && targetHost.isBlank()) {
             Log.w("ScolarsiaNet", "⚠️ HP FISIK DETECTED (${Build.MANUFACTURER} ${Build.MODEL}): Alamat server belum diatur. Gunakan dialog Alamat Server (ikon ⚙️ di layar login).")
-            Log.i("ScolarsiaNet", "Auth -> (belum diatur):9099, Firestore -> (belum diatur):8081, Backend -> (belum diatur):3000, emulatorApplied=false")
+            Log.i("ScolarsiaNet", "Auth -> (kosong):9099, Firestore -> (kosong):8081, Backend -> (kosong):3000, emulatorApplied=false (Source: $hostSource)")
             return
         }
 
@@ -87,11 +87,11 @@ object FirebaseEmulatorHelper {
             isEmulatorConfigured = true
             configuredHost = targetHost
 
-            Log.i("ScolarsiaNet", "Auth -> $targetHost:9099, Firestore -> $targetHost:8081, Backend -> $targetHost:3000, emulatorApplied=true")
-            Log.d("ScolarsiaNet", "✅ Firestore & Auth emulator terhubung ke $targetHost (Project: '$activeProjectId')")
+            Log.i("ScolarsiaNet", "Auth -> $targetHost:9099, Firestore -> $targetHost:8081, Backend -> $targetHost:3000, emulatorApplied=true (Source: $hostSource)")
+            Log.d("ScolarsiaNet", "✅ Firestore & Auth emulator terhubung ke $targetHost (Project: '$activeProjectId', Sumber: $hostSource)")
         } catch (e: Exception) {
             Log.w("ScolarsiaNet", "⚠️ Firestore/Auth emulator setup exception di host '$targetHost': ${e.message}")
-            Log.i("ScolarsiaNet", "Auth -> $targetHost:9099, Firestore -> $targetHost:8081, Backend -> $targetHost:3000, emulatorApplied=$isEmulatorConfigured")
+            Log.i("ScolarsiaNet", "Auth -> $targetHost:9099, Firestore -> $targetHost:8081, Backend -> $targetHost:3000, emulatorApplied=$isEmulatorConfigured (Source: $hostSource)")
         }
     }
 }

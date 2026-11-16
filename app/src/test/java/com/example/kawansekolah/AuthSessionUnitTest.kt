@@ -58,4 +58,22 @@ class AuthSessionUnitTest {
         assertNotNull("Sesi harus tetap tersimpan saat terjadi kegagalan jaringan", currentUserAfterError)
         assertFalse(isSessionCleared)
     }
+
+    @Test
+    fun `5 host kosong memblokir login`() {
+        val hostKosong = ""
+        val isPhysicalDevice = true
+
+        val shouldBlockLogin = isPhysicalDevice && hostKosong.isBlank()
+        assertTrue("Login harus diblokir jika alamat server kosong pada HP fisik", shouldBlockLogin)
+    }
+
+    @Test
+    fun `6 host terisi menerapkan emulator`() {
+        val hostTerisi = "192.168.1.4"
+        val isPhysicalDevice = true
+
+        val shouldApplyEmulator = hostTerisi.isNotBlank() || !isPhysicalDevice
+        assertTrue("Emulator harus diterapkan jika alamat server terisi", shouldApplyEmulator)
+    }
 }

@@ -196,6 +196,14 @@ object AuthRepository {
             Log.i("ScolarsiaAuth", "   useEmulator  : $isApplied")
             Log.i("ScolarsiaAuth", "======================================================")
 
+            // Block login immediately if emulator is NOT configured on Debug physical device
+            if (BuildConfig.DEBUG && BuildConfig.USE_EMULATOR && !isApplied) {
+                if (DevHost.isPhysicalDevice() && currentHost.isBlank()) {
+                    Log.w("ScolarsiaAuth", "Login DIBLOKIR: Alamat server belum diatur pada HP Fisik.")
+                    throw IllegalStateException("Alamat server belum diatur. Buka ikon roda gigi ⚙️ di pojok kanan atas lalu isi IP Wi-Fi laptop Anda.")
+                }
+            }
+
             // 1. Firebase Auth signInWithEmailAndPassword
             val signInResult = try {
                 auth.signInWithEmailAndPassword(email, pass).await()
@@ -210,7 +218,7 @@ object AuthRepository {
                 Log.e("ScolarsiaAuth", "   Stack: at $stackSnippet")
 
                 if (errorCode == "ERROR_CONFIGURATION_NOT_FOUND" || msg.contains("CONFIGURATION_NOT_FOUND")) {
-                    throw IllegalStateException("Konfigurasi Auth tidak ditemukan [CONFIGURATION_NOT_FOUND]. Terhubung ke Firebase Cloud Produksi karena useEmulator belum dipanggil untuk host '$currentHost'. Atur IP server via ikon ⚙️.")
+                    throw IllegalStateException("Aplikasi terhubung ke server yang salah (bukan emulator). Periksa Alamat Server pada ikon ⚙️.")
                 }
 
                 throw IllegalStateException("Gagal masuk Auth ($errorCode): $msg")

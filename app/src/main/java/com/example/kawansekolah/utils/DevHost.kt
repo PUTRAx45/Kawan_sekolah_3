@@ -9,6 +9,7 @@ object DevHost {
     private const val PREF_NAME = "scolarsia_dev_host_prefs"
     private const val KEY_DYNAMIC_HOST = "dynamic_server_host"
 
+    @Volatile
     private var cachedDynamicHost: String? = null
 
     fun getSavedDynamicHost(context: Context?): String {
@@ -23,7 +24,7 @@ object DevHost {
     fun saveDynamicHost(context: Context, host: String) {
         val cleanHost = host.trim().removePrefix("http://").removePrefix("https://").substringBefore(":")
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_DYNAMIC_HOST, cleanHost).apply()
+        prefs.edit().putString(KEY_DYNAMIC_HOST, cleanHost).commit() // Synchronous commit
         cachedDynamicHost = cleanHost
     }
 
@@ -40,46 +41,47 @@ object DevHost {
     }
 
     /**
-     * Resolves host IP address according to priority:
-     * 1. DataStore / SharedPreferences dynamic host
-     * 2. BuildConfig.DEV_SERVER_HOST / BuildConfig.DEV_HOST
-     * 3. "10.0.2.2" for Android Emulator
-     * 4. Empty "" for physical device without configured host
+     * Resolves host IP address and identifies its source:
+     * Returns Pair(host, sourceString)
      */
-    fun getHost(context: Context? = null): String {
+    fun getHostWithSource(context: Context? = null): Pair<String, String> {
         if (!BuildConfig.USE_EMULATOR) {
-            return ""
+            return Pair("", "Production Online")
         }
 
         // Priority 1: SharedPreferences / DataStore
         val dynamicHost = getSavedDynamicHost(context)
         if (dynamicHost.isNotBlank()) {
-            return dynamicHost
+            return Pair(dynamicHost, "DataStore / SharedPreferences")
         }
 
         // Priority 2: ADB Mode
         if (isAdbMode()) {
-            return "127.0.0.1"
+            return Pair("127.0.0.1", "ADB Mode")
         }
 
         // Priority 3: BuildConfig DEV_SERVER_HOST / DEV_HOST
         val buildConfigHost = try {
             val h = BuildConfig.DEV_SERVER_HOST.trim()
             if (h.isNotBlank()) h else BuildConfig.DEV_HOST.trim()
-        } catch (_: Exception) {
+        } catch (_: Throwable) {
             BuildConfig.DEV_HOST.trim()
         }
 
         if (buildConfigHost.isNotBlank()) {
-            return buildConfigHost
+            return Pair(buildConfigHost, "BuildConfig / local.properties")
         }
 
         // Priority 4: Default for Emulator vs Physical Device
         if (isPhysicalDevice()) {
-            return "" // Physical HP without host set
+            return Pair("", "Kosong (HP Fisik Belum Dikonfigurasi)")
         }
 
-        return "10.0.2.2"
+        return Pair("10.0.2.2", "Android Emulator Default (10.0.2.2)")
+    }
+
+    fun getHost(context: Context? = null): String {
+        return getHostWithSource(context).first
     }
 
     fun getBackendBaseUrl(context: Context? = null): String {
@@ -102,7 +104,7 @@ object DevHost {
             }
         }
 
-        val currentHost = getHost(context)
+        val (currentHost, source) = getHostWithSource(context)
 
         return if (isPhysicalDevice() && currentHost.isBlank()) {
             "⚠️ ALAMAT SERVER BELUM DIATUR!\n" +
@@ -114,10 +116,10 @@ object DevHost {
             "• adb reverse tcp:8081 tcp:8081 (Firestore Emulator)\n" +
             "• adb reverse tcp:9099 tcp:9099 (Auth Emulator)"
         } else if (isPhysicalDevice()) {
-            "🌐 MODE LAN WI-FI ($currentHost):\n" +
+            "🌐 MODE LAN WI-FI ($currentHost) [Sumber: $source]:\n" +
             "Aplikasi terhubung ke laptop via IP '$currentHost'. Pastikan HP dan laptop berada dalam satu jaringan Wi-Fi."
         } else {
-            "💻 ANDROID EMULATOR ($currentHost):\n" +
+            "💻 ANDROID EMULATOR ($currentHost) [Sumber: $source]:\n" +
             "Terhubung ke localhost via alias '10.0.2.2'."
         }
     }
