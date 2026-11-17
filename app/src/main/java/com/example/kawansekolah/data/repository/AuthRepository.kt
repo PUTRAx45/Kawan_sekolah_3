@@ -230,11 +230,17 @@ object AuthRepository {
                 throw IllegalStateException("Kata sandi yang Anda masukkan salah. Silakan periksa kembali.")
             } catch (e: TimeoutCancellationException) {
                 val targetHost = DevHost.getHost(context).ifBlank { "10.0.2.2" }
-                Log.e("ScolarsiaAuth", "Login timeout: Tidak bisa menjangkau $targetHost:9099")
-                throw IllegalStateException("Tidak bisa menjangkau $targetHost:9099. Pastikan laptop menyala, satu Wi-Fi, dan firewall terbuka (buka-firewall.bat).")
+                Log.e("ScolarsiaAuth", "Login timeout: Tidak bisa menjangkau server di $targetHost:9099")
+                throw IllegalStateException("Tidak bisa menjangkau server di $targetHost:9099. Periksa IP laptop dan Wi-Fi.")
             } catch (e: Exception) {
-                Log.e("ScolarsiaAuth", "❌ [Login Exception] Class: ${e.javaClass.simpleName} | Message: ${e.message}")
-                throw IllegalStateException("Gagal masuk Auth: ${e.message}")
+                val excName = e.javaClass.simpleName
+                val msg = e.message ?: ""
+                Log.e("ScolarsiaAuth", "❌ [Login Exception] Class: $excName | Message: $msg")
+                if (e is java.net.SocketTimeoutException || e is java.net.ConnectException || e is java.net.UnknownHostException || e is java.io.IOException || msg.contains("network") || msg.contains("connection")) {
+                    val targetHost = DevHost.getHost(context).ifBlank { "10.0.2.2" }
+                    throw IllegalStateException("Tidak bisa menjangkau server di $targetHost:9099. Periksa IP laptop dan Wi-Fi.")
+                }
+                throw IllegalStateException("Gagal masuk Auth: $msg")
             }
 
             val uid = signInResult.user?.uid ?: throw IllegalStateException("User ID tidak ditemukan pada Firebase Auth.")

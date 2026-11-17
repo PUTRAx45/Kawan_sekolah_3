@@ -79,8 +79,19 @@ echo 🧹 [5/6] Memeriksa dan mematikan proses lama di port 3000...
 powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force"
 
 echo.
-echo 🌐 [6/6] INFORMASI ALAMAT IP WI-FI LAPTOP:
-powershell -Command "Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null -and $_.NetAdapter.Status -eq 'Up' -and $_.NetAdapter.InterfaceDescription -notmatch 'Docker|WSL|VirtualBox|vEthernet' } | ForEach-Object { Write-Host '📌 IP Wi-Fi Laptop:' $_.IPv4Address.IPAddress }"
+echo 🌐 [6/6] INFORMASI ALAMAT IP WI-FI LAPTOP SCOLARSIA:
+for /f "usebackq tokens=*" %%i in (`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null -and $_.NetAdapter.Status -eq 'Up' -and $_.NetAdapter.InterfaceDescription -notmatch 'Docker|WSL|VirtualBox|vEthernet' }).IPv4Address.IPAddress" 2^>nul`) do set WIFI_IP=%%i
+
+if "%WIFI_IP%"=="" set WIFI_IP=192.168.1.4
+
+echo.
+echo ======================================================
+echo 📡 ALAMAT IP UNTUK APLIKASI DI HP FISIK: %WIFI_IP%
+echo ======================================================
+
+echo.
+echo 🔬 Menguji keterjangkauan 3 port via IP Wi-Fi (%WIFI_IP%)...
+powershell -Command "$ip='%WIFI_IP%'; foreach($p in @(3000, 9099, 8081)){ try { $s=New-Object System.Net.Sockets.TcpClient; $s.Connect($ip, $p); $s.Close(); Write-Host ('   • Port ' + $p + ': ✅ OK') } catch { Write-Host ('   • Port ' + $p + ': ❌ GAGAL (Tutup/Firewall/Offline)') } }"
 
 echo.
 echo 🚀 Memulai Health Check Async & Backend AI Node.js Express (port 3000)...

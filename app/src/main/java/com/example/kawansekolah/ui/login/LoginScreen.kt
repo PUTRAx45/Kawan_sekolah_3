@@ -471,10 +471,12 @@ fun LoginScreen(
                                     val authRes = testSocket(targetHost, 9099, 3000)
                                     val firestoreRes = testSocket(targetHost, 8081, 3000)
 
-                                    val isOk = backendRes.startsWith("OK") && authRes.startsWith("OK") && firestoreRes.startsWith("OK")
+                                    val isAllOk = backendRes.startsWith("OK") && authRes.startsWith("OK") && firestoreRes.startsWith("OK")
 
-                                    if (isOk) {
+                                    if (isAllOk) {
                                         "✅ SEMUA LAYANAN TERKONEKSI (OK):\n• Backend (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes"
+                                    } else if (!backendRes.startsWith("OK") && !authRes.startsWith("OK") && !firestoreRes.startsWith("OK")) {
+                                        "⚠️ SEMUA LAYANAN GAGAL:\nIP laptop kemungkinan berubah (saat ini: $targetHost).\nJalankan 'tampil-ip.bat' di laptop lalu samakan alamat IP di sini.\n\n• Backend (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes"
                                     } else {
                                         "❌ STATUS KONEKSI LAYANAN:\n• Backend API (3000): $backendRes\n• Auth (9099): $authRes\n• Firestore (8081): $firestoreRes"
                                     }
