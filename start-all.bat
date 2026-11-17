@@ -86,7 +86,14 @@ echo.
 echo 🌐 [6/6] INFORMASI ALAMAT IP WI-FI LAPTOP SCOLARSIA:
 for /f "usebackq tokens=*" %%i in (`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null -and $_.NetAdapter.Status -eq 'Up' -and $_.NetAdapter.InterfaceDescription -notmatch 'Docker|WSL|VirtualBox|vEthernet' }).IPv4Address.IPAddress" 2^>nul`) do set WIFI_IP=%%i
 
-if "%WIFI_IP%"=="" set WIFI_IP=192.168.1.4
+if "%WIFI_IP%"=="" (
+    echo.
+    echo ⚠️ PERINGATAN: IP Wi-Fi laptop tidak terdeteksi! Pastikan laptop terhubung ke Wi-Fi.
+    echo 💡 Jalankan 'tampil-ip.bat' setelah Wi-Fi terhubung.
+    echo.
+    pause
+    exit /b 1
+)
 
 echo.
 echo ======================================================
