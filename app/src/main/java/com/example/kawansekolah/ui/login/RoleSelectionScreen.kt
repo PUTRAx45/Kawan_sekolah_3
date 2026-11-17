@@ -214,7 +214,7 @@ fun RoleSelectionScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Masukkan IP Wi-Fi laptop (hanya angka & titik, misal: 192.168.1.4) atau 10.0.2.2 untuk Android Emulator:",
+                        text = "Masukkan IP Wi-Fi laptop (hanya angka & titik, misal: 192.168.x.x) atau 10.0.2.2 untuk Android Emulator:",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -225,7 +225,7 @@ fun RoleSelectionScreen(
                             serverHostInput = input.filter { c -> c.isDigit() || c == '.' }
                         },
                         label = { Text("IP Laptop / Host") },
-                        placeholder = { Text("192.168.1.4") },
+                        placeholder = { Text("192.168.x.x") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),

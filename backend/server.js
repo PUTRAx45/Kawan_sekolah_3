@@ -185,6 +185,78 @@ async function validateOpenRouterKey() {
   }
 }
 
+// Lightweight check for AI provider reachability (2s timeout, no token consumption)
+async function checkAiReachable() {
+  const provider = (process.env.AI_PROVIDER || 'ollama').toLowerCase().trim();
+  if (provider === 'ollama') {
+    const baseUrl = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1/chat/completions').trim();
+    const rootUrl = baseUrl.substring(0, baseUrl.indexOf('/v1'));
+    try {
+      const res = await axios.get(rootUrl, { timeout: 2000 });
+      return res.status === 200 ? 'OK (Ollama Local UP)' : `HTTP ${res.status}`;
+    } catch (e) {
+      return `OFFLINE (Ollama Local: ${e.message})`;
+    }
+  } else {
+    const apiKey = (process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY || '').trim();
+    if (isKeyPlaceholder(apiKey)) return 'UNCONFIGURED (Key Placeholder)';
+    return 'OK (OpenRouter Cloud Configured)';
+  }
+}
+
+// Unified Call AI Provider (Ollama Primary with OpenRouter Fallback)
+async function callAiProvider(messages, temperature = 0.3, maxTokens = 300, responseFormat = null) {
+  const provider = (process.env.AI_PROVIDER || 'ollama').toLowerCase().trim();
+  const timeoutMs = Number(process.env.AI_TIMEOUT_MS) || 90000;
+  const fallback = (process.env.AI_FALLBACK || 'openrouter').toLowerCase().trim();
+
+  if (provider === 'ollama') {
+    const baseUrl = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1/chat/completions').trim();
+    const model = (process.env.OLLAMA_MODEL || 'llama3.2:latest').trim();
+
+    const payload = {
+      model: model,
+      messages: messages,
+      temperature: temperature,
+      max_tokens: maxTokens
+    };
+    if (responseFormat) payload.response_format = responseFormat;
+
+    const startTime = Date.now();
+    try {
+      console.log(`[AI Provider: Ollama] Sending prompt to ${baseUrl} (${model})...`);
+      const response = await axios.post(baseUrl, payload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: timeoutMs
+      });
+      const duration = Date.now() - startTime;
+      console.log(`[AI Provider: Ollama] Success (${duration}ms) - Model: ${model}`);
+      return { data: response.data, duration, provider: 'ollama' };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(`[AI Provider: Ollama Error] Failed after ${duration}ms:`, error.message);
+
+      if (fallback === 'openrouter') {
+        console.log('🔄 [AI Fallback] Falling back to OpenRouter Cloud API...');
+        try {
+          return await callOpenRouter(messages, temperature, maxTokens, responseFormat);
+        } catch (fallbackErr) {
+          throw fallbackErr;
+        }
+      }
+
+      if (error.code === 'ECONNREFUSED' || error.message.includes('ECONNREFUSED')) {
+        throw { statusCode: 503, code: 'AI_UNREACHABLE', publicMessage: 'Gagal terhubung ke server Ollama local (127.0.0.1:11434).' };
+      } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+        throw { statusCode: 503, code: 'AI_TIMEOUT', publicMessage: 'Koneksi ke server AI melebihi batas waktu (Timeout).' };
+      }
+      throw { statusCode: 503, code: 'AI_UNAVAILABLE', publicMessage: 'Layanan AI saat ini tidak dapat dijangkau.' };
+    }
+  } else {
+    return await callOpenRouter(messages, temperature, maxTokens, responseFormat);
+  }
+}
+
 // Helper Call OpenRouter API / Hermes Agent
 async function callOpenRouter(messages, temperature = 0.4, maxTokens = 500, responseFormat = null) {
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY || '').trim();
@@ -250,14 +322,14 @@ const handleAiRequest = async (req, res) => {
     // 1. Check Greeting Detection First
     if (question) {
       const greetingReply = detectGreeting(question);
-      if (greetingReply) {
+      if (greetingReply && greetingReply.type && !greetingReply.hasContent) {
         return res.json({
           status: 'success',
           modelCalled: false,
           message: 'Salam terdeteksi',
           data: {
-            answer: greetingReply,
-            aiRecommendation: greetingReply
+            answer: greetingReply.reply || 'Halo! Ada yang bisa saya bantu?',
+            aiRecommendation: greetingReply.reply || 'Halo! Ada yang bisa saya bantu?'
           }
         });
       }
@@ -344,35 +416,25 @@ const handleAiRequest = async (req, res) => {
 
     const avgScore = Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length);
 
-    // Call Hermes / OpenRouter AI model
+    // Call Ollama / OpenRouter AI provider
     const systemPrompt = `
-Kamu adalah Asisten AI Analytics Konsultan Pembelajaran Scolarsia (Agent Hermes).
+Kamu adalah Asisten AI Analytics Konsultan Pembelajaran Scolarsia.
 Siswa: ${studentName} (${userRole.toUpperCase()})
 Mata Pelajaran: ${subject}
 Rata-rata Nilai: ${avgScore}
 
-Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
+Jawab dalam Bahasa Indonesia, singkat, ramah, 2-3 kalimat, berdasarkan data nilai yang diberikan.
 `.trim();
 
     const userMessage = question || `Berikan rekomendasi belajar terbaru untuk ${studentName} pada mapel ${subject}.`;
 
     try {
-      const apiKey = (process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY || '').trim();
-      if (isKeyPlaceholder(apiKey)) {
-        return res.status(502).json({
-          status: 'error',
-          modelCalled: false,
-          code: 'AI_KEY_INVALID',
-          message: 'AI belum dikonfigurasi atau kunci tidak valid'
-        });
-      }
-
-      const openRouterRes = await callOpenRouter([
+      const aiProviderRes = await callAiProvider([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage }
       ], 0.3, 300);
 
-      const aiReply = openRouterRes.data?.choices?.[0]?.message?.content?.trim();
+      const aiReply = aiProviderRes.data?.choices?.[0]?.message?.content?.trim();
       if (!aiReply) {
         throw { statusCode: 502, code: 'AI_KEY_INVALID', publicMessage: 'AI belum dikonfigurasi atau kunci tidak valid' };
       }
@@ -380,6 +442,7 @@ Berikan panduan belajar 2-3 kalimat yang membangun, ramah, dan aplikatif.
       return res.json({
         status: 'success',
         modelCalled: true,
+        provider: aiProviderRes.provider || 'ollama',
         message: 'Respons AI Scolarsia berhasil diproses',
         data: {
           answer: aiReply,

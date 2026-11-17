@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const FIRESTORE_BASE = 'http://127.0.0.1:8080/v1/projects/demo-kawansekolah/databases/(default)/documents/';
+const FIRESTORE_BASE = 'http://127.0.0.1:8081/v1/projects/demo-kawansekolah/databases/(default)/documents/';
 const AUTH_BASE = 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/';
 
 async function inspectCollection(colName) {
@@ -23,12 +23,10 @@ async function main() {
   console.log('======================================================');
 
   await inspectCollection('users');
-  await inspectCollection('teaching_profiles');
-  await inspectCollection('subjects');
-  await inspectCollection('topics');
-  await inspectCollection('grades');
-
-  console.log('\n======================================================\n');
+  await inspectCollection('pengguna');
+  await inspectCollection('sekolah');
+  await inspectCollection('kelas');
+  await inspectCollection('nilai');
 }
 
 main();

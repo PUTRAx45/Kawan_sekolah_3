@@ -1,24 +1,42 @@
 const axios = require('axios');
+const execSync = require('child_process').execSync;
 
-const HOST_IP = '192.168.1.4';
-const AUTH_REST_URL = `http://${HOST_IP}:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-key`;
+function getWifiIp() {
+  if (process.argv[2] && process.argv[2].trim().length > 0) {
+    return process.argv[2].trim();
+  }
+  if (process.env.SERVER_IP && process.env.SERVER_IP.trim().length > 0) {
+    return process.env.SERVER_IP.trim();
+  }
+  try {
+    const psCmd = `powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null -and $_.NetAdapter.Status -eq 'Up' -and $_.NetAdapter.InterfaceDescription -notmatch 'Docker|WSL|VirtualBox|vEthernet' }).IPv4Address.IPAddress"`;
+    const out = execSync(psCmd, { encoding: 'utf8' }).trim();
+    const lines = out.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0 && s.includes('.'));
+    if (lines.length > 0) return lines[0];
+  } catch (_) {}
 
-const ACCOUNTS = [
-  { label: 'Admin', email: 'admin12@scolarsia.ac.id', pass: '1g2u3r4u' },
-  { label: 'Guru', email: 'guru12@scolarsia.ac.id', pass: '1g2u3r4u' },
-  { label: 'Wali Kelas', email: 'walikelas12@scolarsia.ac.id', pass: '1g2u3r4u' },
-  { label: 'Siswa', email: '09231@scolarsia.ac.id', pass: '1g2u3r4u' },
-  { label: 'Orang Tua', email: 'ortu_09231@scolarsia.ac.id', pass: '1g2u3r4u' }
-];
+  console.error('⚠️ PERINGATAN: IP Wi-Fi laptop tidak terdeteksi! Masukkan IP via argumen (node test-rest-auth-firestore.js 192.168.x.x) atau atur env SERVER_IP.');
+  process.exit(1);
+}
 
 async function testRestAuthAndFirestore() {
+  const HOST_IP = getWifiIp();
+  const AUTH_REST_URL = `http://${HOST_IP}:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-key`;
+
+  const ACCOUNTS = [
+    { label: 'Admin', email: 'admin12@scolarsia.ac.id', pass: '1g2u3r4u' },
+    { label: 'Guru', email: 'guru12@scolarsia.ac.id', pass: '1g2u3r4u' },
+    { label: 'Wali Kelas', email: 'walikelas12@scolarsia.ac.id', pass: '1g2u3r4u' },
+    { label: 'Siswa', email: '09231@scolarsia.ac.id', pass: '1g2u3r4u' },
+    { label: 'Orang Tua', email: 'ortu_09231@scolarsia.ac.id', pass: '1g2u3r4u' }
+  ];
+
   console.log('======================================================');
   console.log(`🌐 PENGUJIAN REST AUTH (port 9099) & FIRESTORE (port 8081) VIA IP: ${HOST_IP}`);
   console.log('======================================================');
 
   for (const acc of ACCOUNTS) {
     try {
-      // 1. REST Auth signInWithPassword
       const authRes = await axios.post(AUTH_REST_URL, {
         email: acc.email,
         password: acc.pass,
@@ -27,7 +45,6 @@ async function testRestAuthAndFirestore() {
 
       const { localId, idToken } = authRes.data;
 
-      // 2. REST Firestore read users/{uid}
       const firestoreUrl = `http://${HOST_IP}:8081/v1/projects/demo-kawansekolah/databases/(default)/documents/users/${localId}`;
       const docRes = await axios.get(firestoreUrl, {
         headers: { Authorization: `Bearer ${idToken}` }

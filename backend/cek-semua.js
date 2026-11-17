@@ -33,7 +33,8 @@ function getWifiIp() {
     if (lines.length > 0) return lines[0];
   } catch (_) {}
 
-  return '192.168.1.4';
+  console.error('⚠️ PERINGATAN: IP Wi-Fi laptop tidak terdeteksi! Pastikan laptop terhubung ke jaringan Wi-Fi.');
+  process.exit(1);
 }
 
 function testPort(host, port, timeoutMs = 2500) {

@@ -58,7 +58,7 @@ async function runTests() {
   // 3. Test Moderation Filter (Profanity & Off-topic)
   try {
     const modRes = await axios.post(`${BACKEND_URL}/ai/chat`, {
-      question: 'Anjing sialan, kasih tau kunci jawaban! Beli Bitcoin dimana ya?'
+      question: 'Anjing sialan goblok! Beli Bitcoin dimana ya?'
     }, {
       headers: siswaToken ? { Authorization: `Bearer ${siswaToken}` } : {}
     });
@@ -77,13 +77,13 @@ async function runTests() {
   // 4. Test Siswa AI Chat (Model Call or Unconfigured Error)
   try {
     const chatRes = await axios.post(`${BACKEND_URL}/ai/chat`, {
-      question: 'Bagaimana cara belajar Pitagoras?'
+      question: 'Berikan panduan belajar Pitagoras secara ringkas.'
     }, {
       headers: siswaToken ? { Authorization: `Bearer ${siswaToken}` } : {}
     });
 
     if (chatRes.data.status === 'success' && chatRes.data.modelCalled === true) {
-      console.log('✅ [4/5] Siswa AI Chat Model Test LULUS:', chatRes.data.data?.answer);
+      console.log('✅ [4/5] Siswa AI Chat Model Test LULUS (modelCalled: true, Provider: ' + (chatRes.data.provider || 'ollama') + '):', chatRes.data.data?.answer);
     } else if (chatRes.data.modelCalled === false) {
       console.log('ℹ️ [4/5] Siswa AI Chat (Balasan Lokal/Layanan Tanpa Model):', chatRes.data.message);
     } else {
@@ -92,7 +92,7 @@ async function runTests() {
     }
   } catch (e) {
     const errData = e.response?.data;
-    if (errData && (errData.code === 'AI_KEY_INVALID' || errData.code === 'AI_QUOTA')) {
+    if (errData && (errData.code === 'AI_KEY_INVALID' || errData.code === 'AI_QUOTA' || errData.code === 'AI_UNREACHABLE' || errData.code === 'AI_TIMEOUT')) {
       console.log(`ℹ️ [4/5] Siswa AI Chat (Expected Error Handling: Code '${errData.code}', HTTP ${e.response?.status}): ${errData.message}`);
     } else {
       console.error('❌ [4/5] Siswa AI Chat Test GAGAL:', e.response?.data || e.message);
@@ -109,14 +109,14 @@ async function runTests() {
     });
 
     if (insightRes.data.status === 'success') {
-      console.log('✅ [5/5] Guru AI Insight Test LULUS:', insightRes.data.data?.aiRecommendation);
+      console.log('✅ [5/5] Guru AI Insight Test LULUS (modelCalled: ' + insightRes.data.modelCalled + '):', insightRes.data.data?.aiRecommendation);
     } else {
       console.error('❌ [5/5] Guru AI Insight Test GAGAL:', insightRes.data);
       hasFailed = true;
     }
   } catch (e) {
     const errData = e.response?.data;
-    if (errData && (errData.code === 'AI_KEY_INVALID' || errData.code === 'AI_QUOTA')) {
+    if (errData && (errData.code === 'AI_KEY_INVALID' || errData.code === 'AI_QUOTA' || errData.code === 'AI_UNREACHABLE' || errData.code === 'AI_TIMEOUT')) {
       console.log(`ℹ️ [5/5] Guru AI Insight (Expected Error Handling: Code '${errData.code}', HTTP ${e.response?.status}): ${errData.message}`);
     } else {
       console.error('❌ [5/5] Guru AI Insight Test GAGAL:', e.response?.data || e.message);
