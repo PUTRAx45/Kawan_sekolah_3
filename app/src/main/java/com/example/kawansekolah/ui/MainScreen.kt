@@ -64,7 +64,7 @@ fun MainScreen(
         if (currentRoute != null) {
             val isAdminRoute = adminRoutes.contains(currentRoute)
             if (userRole == UserRole.ADMIN && !isAdminRoute && currentRoute != "ubah_kata_sandi" && currentRoute != "privasi_notifikasi" && currentRoute != "perangkat_sesi") {
-                Log.w("ScolarsiaAuth", "Navigasi Ditolak: User ADMIN mencoba mengakses route '$currentRoute'. Mengarahkan kembali ke admin_beranda.")
+                Log.w("ScolarsiaA uth", "Navigasi Ditolak: User ADMIN mencoba mengakses route '$currentRoute'. Mengarahkan kembali ke admin_beranda.")
                 navController.navigate("admin_beranda") {
                     popUpTo(0) { inclusive = true }
                 }

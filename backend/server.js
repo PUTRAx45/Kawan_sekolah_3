@@ -1,4 +1,5 @@
 require('dotenv').config();
+const serverStartedAt = new Date().toISOString();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -595,6 +596,7 @@ app.get('/health/detail', async (req, res) => {
     status: isHealthy ? 'UP' : 'DEGRADED',
     package: `${pkg.name}@${pkg.version}`,
     cwd: process.cwd(),
+    startedAt: serverStartedAt,
     firebaseMode: firebaseModeLabel,
     authHost: process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
     firestoreHost: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8081',
