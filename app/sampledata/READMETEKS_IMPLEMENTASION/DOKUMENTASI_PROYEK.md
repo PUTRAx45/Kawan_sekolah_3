@@ -36,10 +36,36 @@ Seluruh berkas catatan, panduan, dan dokumentasi proyek disimpan secara terpusat
 
 ---
 
+## 🗺️ ROADMAP MENUJU PRODUKSI & DEPLOYMENT
+
+1. **Langkah 1: Selesaikan Lokal (Local Completion & Verification)**
+   - Login 5 peran di HP Fisik (Admin, Guru, Wali Kelas, Siswa, Orang Tua).
+   - Penguncian peran (1 akun = 1 peran) & isolasi navigasi.
+   - Fitur AI Analytics & Chat berjalan lancar.
+
+2. **Langkah 2: Uji Aturan Keamanan (Security Rules)**
+   - Menjalankan `npm run test-rules` di folder `backend/` untuk menguji isolasi hak akses Firestore per peran.
+
+3. **Langkah 3: Firebase Cloud Production & Akun Admin Awal**
+   - Membuat project Firebase Cloud asli di Firebase Console.
+   - Mengunduh `google-services.json` produksi dan mendaftarkan akun Admin pertama.
+
+4. **Langkah 4: Deploy Backend AI ke Cloud Hosting (HTTPS & Secrets)**
+   - Mempublikasikan service `backend/` ke platform cloud (Render / Railway / Koyeb) dengan variabel lingkungan `OPENROUTER_API_KEY` & `FIREBASE_SERVICE_ACCOUNT_JSON`.
+
+5. **Langkah 5: Build Release APK**
+   - Membangun APK varian `release` (tanpa dialog IP server, tanpa dev seed, tanpa cleartext HTTP).
+
+6. **Langkah 6: Kebijakan Privasi & Rilis Play Store**
+   - Menyusun Kebijakan Privasi (*Privacy Policy*) perlindungan data siswa & sekolah sebelum publikasi di Google Play Store.
+
+---
+
 ## 🚀 Perintah Pengembang (NPM Scripts)
 
 Di folder `backend/`:
 - `npm start`: Menjalankan server backend Express di port 3000.
+- `npm run cek`: Menjalankan 17 sub-cek diagnosis terpusat server & emulator.
 - `npm run seed`: Mengisi data dummy ke emulator Auth & Firestore.
 - `npm run seed:clear`: Menghapus **hanya** data dummy (`isDummy === true`).
 - `npm run seed:reset`: Menghapus data dummy lalu mengisinya kembali.
