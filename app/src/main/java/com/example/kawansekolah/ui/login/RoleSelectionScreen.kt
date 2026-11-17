@@ -54,6 +54,7 @@ fun RoleSelectionScreen(
     }
 
     var showServerConfigDialog by remember { mutableStateOf(false) }
+    var showDiagnosticsDialog by remember { mutableStateOf(false) }
     var serverHostInput by remember { mutableStateOf(DevHost.getHost(context)) }
     var testResultMsg by remember { mutableStateOf("") }
     var isTestingConnection by remember { mutableStateOf(false) }
@@ -325,6 +326,16 @@ fun RoleSelectionScreen(
                     ) {
                         Text(if (isTestingConnection) "Memeriksa..." else "Tes Koneksi (3 Layanan)", fontSize = 13.sp)
                     }
+
+                    OutlinedButton(
+                        onClick = {
+                            showDiagnosticsDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Diagnostik Lengkap (8 Cek HP)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             },
             confirmButton = {
@@ -358,6 +369,10 @@ fun RoleSelectionScreen(
             },
             shape = RoundedCornerShape(20.dp)
         )
+    }
+
+    if (showDiagnosticsDialog) {
+        ConnectionDiagnosticsDialog(onDismiss = { showDiagnosticsDialog = false })
     }
 }
 

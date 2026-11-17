@@ -55,7 +55,7 @@ object ConnectionDiagnostics {
             results.add(authResult)
 
             // 2. Firestore Emulator
-            val firestoreResult = checkTcpPort("Firestore Emulator", host, 8080)
+            val firestoreResult = checkTcpPort("Firestore Emulator", host, 8081)
             results.add(firestoreResult)
         } else {
             results.add(

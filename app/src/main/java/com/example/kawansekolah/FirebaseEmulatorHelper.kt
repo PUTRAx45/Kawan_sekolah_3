@@ -56,15 +56,15 @@ object FirebaseEmulatorHelper {
         useEmulator: Boolean = BuildConfig.USE_EMULATOR,
         overrideHost: String? = null
     ) {
+        if (!useEmulator || isEmulatorConfigured) {
+            val hostStr = if (configuredHost.isNotBlank()) configuredHost else DevHost.getHost(context)
+            Log.i("ScolarsiaNet", "Auth -> $hostStr:9099, Firestore -> $hostStr:8081, Backend -> $hostStr:3000, emulatorApplied=$isEmulatorConfigured")
+            return
+        }
+
         val (host, hostSource) = if (overrideHost != null) Pair(overrideHost, "Override Dialog") else DevHost.getHostWithSource(context)
         val targetHost = host.trim().ifBlank {
             if (isPhysicalDevice()) "" else "10.0.2.2"
-        }
-
-        if (!useEmulator || isEmulatorConfigured) {
-            val hostStr = if (configuredHost.isNotBlank()) configuredHost else targetHost
-            Log.i("ScolarsiaNet", "Auth -> $hostStr:9099, Firestore -> $hostStr:8081, Backend -> $hostStr:3000, emulatorApplied=$isEmulatorConfigured (Source: $hostSource)")
-            return
         }
 
         if (isPhysicalDevice() && targetHost.isBlank()) {
